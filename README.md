@@ -6,7 +6,7 @@ This programm is based on reddit post https://www.reddit.com/r/pathofexile/comme
 Code inspired by ItemInfo https://github.com/aRTy42/POE-ItemInfo
 
 All you have to do in game is hover over an item and press Ctrl+C, that way item info will be copied to clipboard and ezValue will show main affixes according to reddit post.
-Tooltip will appear with item information and recommendation, to use item if it's at least ok, or to sell it.
+Tooltip will appear with item information and recommendation, to use item if it's at least ok, or to sell it. If item have at least 2 needed affixes with recommended numbers, it's Sum rating will be 2+ which means item is overall good and usable. As higher it's sum rating, the better the item. Value of item should show number according to 100% scale, where 2 mods with desirable numbers give 1.00(or 100%), and 1 mod gives only 0.5 (or 50%).
 
 My changes:
 Towards reddit post - item appraisal is dynamic, for example while according to post you need "at least 75 life" on body armour, ezValue will show rating of existing Life value by simple formula = (value/post value goal)

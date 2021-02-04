@@ -641,7 +641,7 @@ ratingCounter(itemType, stats, gripType:="1H"){
 		affShort(14, 80, rating, ratingTable, stats)
 	}
 
-	if ((itemType == "Sword") or (itemType == "Axe") or (itemType == "Mace") or (itemType == "Bow")) {
+	if ((itemType == "Sword") or (itemType == "Axe") or (itemType == "Mace") or (itemType == "Claw") or (itemType == "Bow")) {
 		;phys increased 170+
 		affShort(15, 170, rating, ratingTable, stats)
 
