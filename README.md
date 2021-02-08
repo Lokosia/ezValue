@@ -4,6 +4,7 @@ Tool for getting value of items in online RPG Path of Exile.
 ## Introduction
 **As of ver 0.0.1**
 This programm is based on reddit post https://www.reddit.com/r/pathofexile/comments/56rtmk/the_is_this_item_worth_something_guide/
+
 Code inspired by ItemInfo https://github.com/aRTy42/POE-ItemInfo
 
 All you have to do in game is hover over an item and press Ctrl+C, that way item info will be copied to clipboard and ezValue will show main affixes according to reddit post.
