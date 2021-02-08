@@ -39,7 +39,7 @@ OnClipboardChange:
 		itemType := parseItemType(stats, namePlate)[2]
 
 		parsedItem := parseItemType(stats, namePlate)
-		rating := ratingCounter(parsedItem[2], stats, parsedItem[3])
+		rating := ratingCounter(parsedItem, stats, parsedItem[3])
 		totalRating := rating[1]
 
 		descriptionRating := rating[2]
@@ -84,6 +84,7 @@ OnClipboardChange:
 		descriptionArray[37] := "+"descriptionRating[37]" for " incRarity "% increased Rarity of Items found`n"
 		descriptionArray[38] := "+"descriptionRating[38]" for " manaReg "% increased Mana Regeneration Rate`n"
 		descriptionArray[39] := "+"descriptionRating[39]" for " totalAttributes " to Total Attributes`n"
+		descriptionArray[40] := "+"descriptionRating[40]" for " elementalDmg " increased Elemental Damage with Attack Skills`n"
 		
 		description := ""
 		Loop % ObjLength(descriptionArray)
@@ -93,14 +94,19 @@ OnClipboardChange:
 			}
 		}
 		description := SubStr(description, 1 , StrLen(description)-1)
-		value := (totalRating/2)
-		if (value < 1){
+		if (totalRating < 2){
 			verdict := "Bad item, vend to NPC or reroll"
 		} else {
 			verdict := "Good item, use it"
 		}
 		;form tooltip
-		finalString = %itemName%`n`n%description%`nSum Rating: %totalRating%`n`nValue: %value%`nVerdict: %verdict%
+		finalString := itemName
+		if (description != ""){
+			finalString := finalString "`n" description
+		}
+		finalString := finalString "`nRating:`t" totalRating "`nResult:`t" verdict
+		
+		;finalString = %itemName%`n`n%description%`nSum Rating: %totalRating%`nVerdict: %verdict%
 		;show tooltip
 		Tooltip % finalString
 		;delete tooltip in 5 sec
@@ -389,14 +395,17 @@ affShort(affix, numberToCheck, ByRef rating, ByRef ratingTable, ByRef stats){
 	}
 	if (affix == 30) {
 		Global aspdRolls
-		needle := "increased.+Speed"
+		needle := "Speed"
 		regexReplace(item, needle, needle, aspdRolls)
 		convertStat(aspdRolls, numberToCheck, rating, ratingTable, affix)
 	}
 	if (affix == 31) {
 		Global damageRolls
-		needle := "increased.+Damage"
+		needle := "m)^((?!Block).)*Damage"
+		needle2 := "Critical"
 		regexReplace(item, needle, needle, damageRolls)
+		regexReplace(item, needle2, needle2, critRolls)
+		damageRolls += critRolls
 		convertStat(damageRolls, numberToCheck, rating, ratingTable, affix)
 	}
 	if (affix == 32) {
@@ -444,6 +453,11 @@ affShort(affix, numberToCheck, ByRef rating, ByRef ratingTable, ByRef stats){
 		totalAttributes += (tempDEX + tempSTR + tempINT)
 		convertStat(totalAttributes, numberToCheck, rating, ratingTable, affix)
 	}
+	if (affix == 40) {
+		Global elementalDmg
+		elementalDmg := getAff("% increased Elemental Damage with Attack Skills")
+		convertStat(elementalDmg, numberToCheck, rating, ratingTable, affix)
+	}
 }
 
 ratingCounter(itemType, stats, gripType:="1H"){
@@ -451,7 +465,7 @@ ratingCounter(itemType, stats, gripType:="1H"){
 	rating = 0
 	;used for tooltip strings
 	ratingTable := []
-	Loop, 39
+	Loop, 40
 	{
 		ratingTable[A_Index] := 0
 	}
@@ -494,330 +508,462 @@ ratingCounter(itemType, stats, gripType:="1H"){
 	;37 increased rarity of items found
 	;38 mana regen rate
 	;39 total attributes
+	;40 elemental damage with attack skills
+	;MsgBox % stats
+	if (itemType[1] == "Currency") {
 
-	;if body armour - check for body armor suffs
-	if (itemType == "BodyArmour") {
-		;life 75+ on armor/evasion base
-		affShort(2, 75, rating, ratingTable, stats)
+		scroll_of_wisdom := 1
+		portal_scroll := scroll_of_wisdom * 3
+		orb_of_transmutation := portal_scroll * 7
+		orb_of_augmentation := orb_of_transmutation * 4
+		orb_of_alteration := orb_of_augmentation * 4
+		jewellers_orb := orb_of_alteration * 2
+		chromatic_orb := jewellers_orb * 3
+		orb_of_fusing := jewellers_orb * 4
+		orb_of_chance := orb_of_fusing * 1
+		orb_of_scouring := orb_of_chance * 4
+		orb_of_regret := orb_of_scouring * 2
+		orb_of_alchemy := orb_of_regret * 1
 		
-		;Energy shield 575+
-		affShort(3, 575, rating, ratingTable, stats)
+		armourers_scrap := portal_scroll * 5
+		blacksmiths_whetstone := armourers_scrap * 3
+		glassblowers_bauble := blacksmiths_whetstone * 8
+
+		gemcutter_prism := glassblowers_bauble * 20
+		chaos_orb := orb_of_alchemy * 3
+		regal_orb := chaos_orb * 16
+		blessed_orb := regal_orb * 1
+		exalted_orb := regal_orb * 5
+		divine_orb := exalted_orb * 4
+
+		if (itemType[2] == "Scroll of Wisdom") {
+			rating += scroll_of_wisdom
+		}
+		if (itemType[2] == "Scroll Fragment") {
+			rating += scroll_of_wisdom/5
+		}
+		if (itemType[2] == "Portal Scroll") {
+			rating += portal_scroll
+		}
+		if (itemType[2] == "Orb of Transmutation") {
+			rating += orb_of_transmutation
+		}
+		if (itemType[2] == "Transmutation Shard") {
+			rating += orb_of_transmutation/20
+		}
+		if (itemType[2] == "Orb of Augmentation") {
+			rating += orb_of_augmentation
+		}
+		if (itemType[2] == "Orb of Alteration") {
+			rating += orb_of_alteration
+		}
+		if (itemType[2] == "Alteration Shard") {
+			rating += orb_of_alteration/20
+		}
+		if (itemType[2] == "Jeweller's Orb") {
+			rating += jewellers_orb
+		}
+		if (itemType[2] == "Chromatic Orb") {
+			rating += chromatic_orb
+		}
+		if (itemType[2] == "Orb of Fusing") {
+			rating += orb_of_fusing
+		}
+		if (itemType[2] == "Orb of Chance") {
+			rating += orb_of_chance
+		}
+		if (itemType[2] == "Orb of Scouring") {
+			rating += orb_of_scouring
+		}
+		if (itemType[2] == "Orb of Regret") {
+			rating += orb_of_regret
+		}
+		if (itemType[2] == "Orb of Alchemy") {
+			rating += orb_of_alchemy
+		}
+		if (itemType[2] == "Alchemy Shard") {
+			rating += orb_of_alchemy/20
+		}
+		if (itemType[2] == "Armourer's Scrap") {
+			rating += armourers_scrap
+		}
+		if (itemType[2] == "Blacksmith's Whetstone") {
+			rating += blacksmiths_whetstone
+		}
+		if (itemType[2] == "Glassblower's Bauble") {
+			rating += glassblowers_bauble
+		}
+		if (itemType[2] == "Gemcutter's Prism") {
+			rating += gemcutter_prism
+		}
+		if (itemType[2] == "Chaos Orb") {
+			rating += chaos_orb
+		}
+		if (itemType[2] == "Chaos Shard") {
+			rating += chaos_orb/20
+		}
+		if (itemType[2] == "Regal Orb") {
+			rating += regal_orb
+		}
+		if (itemType[2] == "Regal Shard") {
+			rating += regal_orb/20
+		}
+		if (itemType[2] == "Blessed Orb") {
+			rating += blessed_orb
+		}
+		if (itemType[2] == "Exalted Orb") {
+			rating += exalted_orb
+		}
+		if (itemType[2] == "Exalted Orb") {
+			rating += exalted_orb
+		}
+		if (itemType[2] == "Exalted Shard") {
+			rating += exalted_orb/20
+		}
+		if (itemType[2] == "Divine Orb") {
+			rating += divine_orb
+		}
 		
-		;if energy shield base or hybrid
-		;life 70+
-		affShort(4, 70, rating, ratingTable, stats)
-		;Energy shield 350+
-		affShort(5, 350, rating, ratingTable, stats)
+	}
+	if (itemType[1] == "Armour") {
+		;if body armour - check for body armor suffs
+		if (itemType[2] == "BodyArmour") {
+			;life 75+ on armor/evasion base
+			affShort(2, 75, rating, ratingTable, stats)
+			
+			;Energy shield 575+
+			affShort(3, 575, rating, ratingTable, stats)
+			
+			;if energy shield base or hybrid
+			;life 70+
+			affShort(4, 70, rating, ratingTable, stats)
+			;Energy shield 350+
+			affShort(5, 350, rating, ratingTable, stats)
+			
+			;if armour base
+			if (armorBase(stats, "Armour")){
+				;str 40+
+				affShort(6, 40, rating, ratingTable, stats)
+			}
+			
+			;if energy base
+			if (armorBase(stats, "Energy")){
+				;int 40+
+				affShort(7, 40, rating, ratingTable, stats)
+			}
+
+			;total elemental resistance 80+
+			affShort(8, 80, rating, ratingTable, stats)
+		}
 		
-		;if armour base
-		if (armorBase(stats, "Armour")){
+		if (itemType[2] == "Helmet") {
+			;life 65+ on armor/evasion base
+			affShort(2, 65, rating, ratingTable, stats)
+
+			;Energy shield 350+
+			affShort(3, 350, rating, ratingTable, stats)
+
+			;if energy shield base or hybrid
+			;life 65+
+			affShort(4, 65, rating, ratingTable, stats)
+			;Energy shield 200+
+			affShort(5, 200, rating, ratingTable, stats)
+
+			;accuracy 300+
+			affShort(9, 300, rating, ratingTable, stats)
+
+			;if armor or evasion base
+			if (!armorBase(stats, "Energy", 1) and !armorBase(stats, "Energy")){
+				;int 40
+				affShort(7, 40, rating, ratingTable, stats)
+			}
+
+			;total resistance 80
+			affShort(8, 80, rating, ratingTable, stats)
+		}
+
+		if (itemType[2] == "Boots") {
+			;movement speed 20+
+			affShort(10, 20, rating, ratingTable, stats)
+
+			;life 65+ on armor/evasion base
+			affShort(2, 65, rating, ratingTable, stats)
+
+			;Energy shield 130+
+			affShort(3, 130, rating, ratingTable, stats)
+
+			;if energy shield base or hybrid
+			;65+ life
+			affShort(4, 65, rating, ratingTable, stats)
+			;90+ es
+			affShort(5, 90, rating, ratingTable, stats)
+
 			;str 40+
 			affShort(6, 40, rating, ratingTable, stats)
-		}
-		
-		;if energy base
-		if (armorBase(stats, "Energy")){
+			
 			;int 40+
 			affShort(7, 40, rating, ratingTable, stats)
+
+			;total resistance 70
+			affShort(8, 70, rating, ratingTable, stats)
 		}
 
-		;total elemental resistance 80+
-		affShort(8, 80, rating, ratingTable, stats)
-	}
-	
-	if (itemType == "Helmet") {
-		;life 65+ on armor/evasion base
-		affShort(2, 65, rating, ratingTable, stats)
+		if (itemType[2] == "Gloves") {
+			;life 65+ on armor/evasion base
+			affShort(2, 65, rating, ratingTable, stats)
 
-		;Energy shield 350+
-		affShort(3, 350, rating, ratingTable, stats)
+			;Energy shield 150+
+			affShort(3, 150, rating, ratingTable, stats)
 
-		;if energy shield base or hybrid
-		;life 65+
-		affShort(4, 65, rating, ratingTable, stats)
-		;Energy shield 200+
-		affShort(5, 200, rating, ratingTable, stats)
+			;if energy shield base or hybrid
+			;65+ life
+			affShort(4, 65, rating, ratingTable, stats)
+			;100+ es
+			affShort(5, 100, rating, ratingTable, stats)
 
-		;accuracy 300+
-		affShort(9, 300, rating, ratingTable, stats)
+			;total resistance
+			affShort(8, 80, rating, ratingTable, stats)
 
-		;if armor or evasion base
-		if (!armorBase(stats, "Energy", 1) and !armorBase(stats, "Energy")){
-			;int 40
-			affShort(7, 40, rating, ratingTable, stats)
+			;accuracy 300+
+			affShort(9, 300, rating, ratingTable, stats)
+
+			;attack speed 10+
+			affShort(11, 10, rating, ratingTable, stats)
+
+			;if armour or energy shield base
+			if (!armorBase(stats, "Evasion") and !armorBase(stats, "Evasion", 1)){
+				;40+ dex
+				affShort(12, 40, rating, ratingTable, stats)
+			}
 		}
 
-		;total resistance 80
-		affShort(8, 80, rating, ratingTable, stats)
-	}
+		if (itemType[2] == "Shield") {
+			;80+ life if armour or evasion abse
+			affShort(2, 80, rating, ratingTable, stats)
 
-	if (itemType == "Boots") {
-		;movement speed 20+
-		affShort(10, 20, rating, ratingTable, stats)
+			;Energy shield 350+
+			affShort(3, 350, rating, ratingTable, stats)
+			
+			;if energy shield base or hybrid
+			;80+ life
+			affShort(4, 80, rating, ratingTable, stats)
+			;280+ es
+			affShort(5, 280, rating, ratingTable, stats)
 
-		;life 65+ on armor/evasion base
-		affShort(2, 65, rating, ratingTable, stats)
+			;total resistance
+			affShort(8, 100, rating, ratingTable, stats)
 
-		;Energy shield 130+
-		affShort(3, 130, rating, ratingTable, stats)
+			;if armour base
+			if (armorBase(stats, "Armour")){
+				;str 35+
+				affShort(6, 35, rating, ratingTable, stats)
+			}
+			
+			;if energy base
+			if (armorBase(stats, "Energy")){
+				;int 35+
+				affShort(7, 35, rating, ratingTable, stats)
+			}
 
-		;if energy shield base or hybrid
-		;65+ life
-		affShort(4, 65, rating, ratingTable, stats)
-		;90+ es
-		affShort(5, 90, rating, ratingTable, stats)
+			;55+ spell damage
+			affShort(13, 55, rating, ratingTable, stats)
 
-		;str 40+
-		affShort(6, 40, rating, ratingTable, stats)
-		
-		;int 40+
-		affShort(7, 40, rating, ratingTable, stats)
-
-		;total resistance 70
-		affShort(8, 70, rating, ratingTable, stats)
-	}
-
-	if (itemType == "Gloves") {
-		;life 65+ on armor/evasion base
-		affShort(2, 65, rating, ratingTable, stats)
-
-		;Energy shield 150+
-		affShort(3, 150, rating, ratingTable, stats)
-
-		;if energy shield base or hybrid
-		;65+ life
-		affShort(4, 65, rating, ratingTable, stats)
-		;100+ es
-		affShort(5, 100, rating, ratingTable, stats)
-
-		;total resistance
-		affShort(8, 80, rating, ratingTable, stats)
-
-		;accuracy 300+
-		affShort(9, 300, rating, ratingTable, stats)
-
-		;attack speed 10+
-		affShort(11, 10, rating, ratingTable, stats)
-
-		;if armour or energy shield base
-		if (!armorBase(stats, "Evasion") and !armorBase(stats, "Evasion", 1)){
-			;40+ dex
-			affShort(12, 40, rating, ratingTable, stats)
-		}
-	}
-
-	if (itemType == "Shield") {
-		;80+ life if armour or evasion abse
-		affShort(2, 80, rating, ratingTable, stats)
-
-		;Energy shield 350+
-		affShort(3, 350, rating, ratingTable, stats)
-		
-		;if energy shield base or hybrid
-		;80+ life
-		affShort(4, 80, rating, ratingTable, stats)
-		;280+ es
-		affShort(5, 280, rating, ratingTable, stats)
-
-		;total resistance
-		affShort(8, 100, rating, ratingTable, stats)
-
-		;if armour base
-		if (armorBase(stats, "Armour")){
-			;str 35+
-			affShort(6, 35, rating, ratingTable, stats)
-		}
-		
-		;if energy base
-		if (armorBase(stats, "Energy")){
-			;int 35+
-			affShort(7, 35, rating, ratingTable, stats)
+			;80+ spell crit chance
+			affShort(14, 80, rating, ratingTable, stats)
 		}
 
-		;55+ spell damage
-		affShort(13, 55, rating, ratingTable, stats)
-
-		;80+ spell crit chance
-		affShort(14, 80, rating, ratingTable, stats)
-	}
-
-	if ((itemType == "Sword") or (itemType == "Axe") or (itemType == "Mace") or (itemType == "Claw") or (itemType == "Bow")) {
-		;phys increased 170+
-		affShort(15, 170, rating, ratingTable, stats)
-
-		if (gripType == "2H"){
-			;xx to xx flat phys
-			affShort(16, 50, rating, ratingTable, stats)
-			;elemental damage 2h
-			affShort(21, 100*2, rating, ratingTable, stats)
-		} else {
-			;1H weapon
-			;xx to xx flat phys
-			affShort(16, 33, rating, ratingTable, stats)
-			;elemental damage 1h
-			affShort(20, 70*2, rating, ratingTable, stats)
-		}
-
-		;attack speed 20+
-		affShort(11, 20, rating, ratingTable, stats)
-
-		if (itemType == "Bow") {
-			;weapon crit chance 30+
-			affShort(17, 30, rating, ratingTable, stats)
-			;crit multi 30+
+		if (itemType[2] == "Quiver"){
+			;75+ life
+			affShort(2, 75, rating, ratingTable, stats)
+			;30 elemental spell damage
+			affShort(22, 30, rating, ratingTable, stats)
+			;30 crit strike multi
 			affShort(18, 30, rating, ratingTable, stats)
-			;+2 socketed bow gems
-			affShort(19, 2, rating, ratingTable, stats)
+			;30 crit strike chance
+			affShort(17, 30, rating, ratingTable, stats)
+			;70 total res
+			affShort(8, 70, rating, ratingTable, stats)
 		}
 	}
 
-	if ((itemType == "Dagger") or (itemType == "Wand") or (itemType == "Sceptre")) {
-		;Caster
-		;elemental spell damage 90+
-		affShort(22, 90, rating, ratingTable, stats)
-		;130+ critical strike chance for spells
-		affShort(23, 130, rating, ratingTable, stats)
-		;flat elemental damage to spells
-		affShort(24, 50, rating, ratingTable, stats)
-		;crit multi 30+
-		affShort(18, 30, rating, ratingTable, stats)
-
-		;Attack dagger or wand
-		if ((itemType == "Dagger") or (itemType == "Wand")) {
+	if (itemType[1] == "Weapon") {
+		if ((itemType[2] == "Sword") or (itemType[2] == "Axe") or (itemType[2] == "Mace") or (itemType[2] == "Claw") or (itemType[2] == "Bow")) {
 			;phys increased 170+
 			affShort(15, 170, rating, ratingTable, stats)
-			;xx to xx flat phys
-			affShort(16, 33, rating, ratingTable, stats)
+
+			if (gripType == "2H"){
+				;xx to xx flat phys
+				affShort(16, 50, rating, ratingTable, stats)
+				;elemental damage 2h
+				affShort(21, 100*2, rating, ratingTable, stats)
+				;elemental damage with attacks
+				affShort(40, 87, rating, ratingTable, stats)
+			} else {
+				;1H weapon
+				;xx to xx flat phys
+				affShort(16, 33, rating, ratingTable, stats)
+				;elemental damage 1h
+				affShort(20, 70*2, rating, ratingTable, stats)
+				;elemental damage with attacks
+				affShort(40, 51, rating, ratingTable, stats)
+			}
 
 			;attack speed 20+
-			if (itemType == "Dagger") {
-				dorw := 20
-			} else {
-				dorw := 10
-			}
-			affShort(11, dorw, rating, ratingTable, stats)
+			affShort(11, 20, rating, ratingTable, stats)
 
-			;weapon crit chance 30+
-			affShort(17, 30, rating, ratingTable, stats)
+			if (itemType == "Bow") {
+				;weapon crit chance 30+
+				affShort(17, 30, rating, ratingTable, stats)
+				;crit multi 30+
+				affShort(18, 30, rating, ratingTable, stats)
+				;+2 socketed bow gems
+				affShort(19, 2, rating, ratingTable, stats)
+			}
+		}
+
+		if ((itemType[2] == "Dagger") or (itemType[2] == "Wand") or (itemType[2] == "Sceptre")) {
+			;Caster
+			;elemental spell damage 90+
+			affShort(22, 90, rating, ratingTable, stats)
+			;130+ critical strike chance for spells
+			affShort(23, 130, rating, ratingTable, stats)
+			;flat elemental damage to spells
+			affShort(24, 50, rating, ratingTable, stats)
 			;crit multi 30+
 			affShort(18, 30, rating, ratingTable, stats)
 
-			;elemental damage 1h
+			;Attack dagger or wand
+			if ((itemType == "Dagger") or (itemType == "Wand")) {
+				;phys increased 170+
+				affShort(15, 170, rating, ratingTable, stats)
+				;xx to xx flat phys
+				affShort(16, 33, rating, ratingTable, stats)
+
+				;attack speed 20+
+				if (itemType == "Dagger") {
+					dorw := 20
+				} else {
+					dorw := 10
+				}
+				affShort(11, dorw, rating, ratingTable, stats)
+
+				;weapon crit chance 30+
+				affShort(17, 30, rating, ratingTable, stats)
+				;crit multi 30+
+				affShort(18, 30, rating, ratingTable, stats)
+
+				;elemental damage 1h
+				affShort(20, 70, rating, ratingTable, stats)
+			}
+		}
+		
+		if ((itemType[2] == "Staff") or (itemType[2] == "Warstaff")){
+			;+1 to socketed gems AND +2 to socketed elem gems
+			affShort(26, 3, rating, ratingTable, stats)
+
+			;elemental damage 2h, but counting as 1h 
+			;TODO: flat elem damage on staffs are individual compared to method in affShort,
+			;now it is not precise enough also because of lightning damage
+			;(it is higher than in the other weapon types)
+			;because of that we count it as 1h weapon
 			affShort(20, 70, rating, ratingTable, stats)
+
+			;elemental spell damage 160+
+			affShort(22, 160, rating, ratingTable, stats)
+		}
+	}
+
+	if (itemType[1] == "Jewel") {
+		if (itemType[2] == "Jewel"){
+			;% Life, 6 is middle value of all possible
+			affShort(27, 6, rating, ratingTable, stats)
+			;% ES
+			affShort(28, 6, rating, ratingTable, stats)
+			;% Cast speed
+			affShort(29, 3, rating, ratingTable, stats)
+			;% crit multi
+			affShort(18, 10.5, rating, ratingTable, stats)
+			;number of aspd compatible rolls
+			affShort(30, 2, rating, ratingTable, stats)
+			;% damage compatible rolls
+			affShort(31, 2, rating, ratingTable, stats)
+		}
+	}
+
+	
+
+	if (itemType[1] == "Accessory") {
+		if (itemType[2] == "Belt"){
+			;70+ life if armour or evasion abse
+			affShort(2, 70, rating, ratingTable, stats)
+			;35 STR
+			affShort(6, 35, rating, ratingTable, stats)
+			;280 armour
+			affShort(32, 280, rating, ratingTable, stats)
+			;45 energy shield
+			affShort(33, 45, rating, ratingTable, stats)
+			;70 total res
+			affShort(8, 70, rating, ratingTable, stats)
+			;30 elemental damage
+			affShort(22, 30, rating, ratingTable, stats)
+			;Reduced flask charges used
+			affShort(34, 1, rating, ratingTable, stats)
+			;Increased flask charges gained
+			affShort(35, 1, rating, ratingTable, stats)
+			;Flask effect duration
+			affShort(36, 1, rating, ratingTable, stats)
+		}
+
+		if (itemType[2] == "Ring"){
+			;55+ life if armour or evasion abse
+			affShort(2, 55, rating, ratingTable, stats)
+			;50 energy shield
+			affShort(33, 50, rating, ratingTable, stats)
+			;xx-11 flat phys to attacks
+			affShort(16, 11, rating, ratingTable, stats)
+			;30 elemental damage
+			affShort(22, 30, rating, ratingTable, stats)
+			;40 increased rarity
+			affShort(37, 40, rating, ratingTable, stats)
+			;80 total res
+			affShort(8, 80, rating, ratingTable, stats)
+			;50+ mana regen
+			affShort(38, 50, rating, ratingTable, stats)
+			;250+ accuracy
+			affShort(9, 250, rating, ratingTable, stats)
+			;75+ total attributes
+			affShort(39, 75, rating, ratingTable, stats)
+		}
+
+		if (itemType[2] == "Amulet"){
+			;55+ life
+			affShort(2, 55, rating, ratingTable, stats)
+			;xx-11 flat phys to attacks
+			affShort(16, 11, rating, ratingTable, stats)
+			;30 elemental damage
+			affShort(22, 30, rating, ratingTable, stats)
+			;40 increased rarity
+			affShort(37, 40, rating, ratingTable, stats)
+			;90 total res
+			affShort(8, 90, rating, ratingTable, stats)
+			;65+ mana regen
+			affShort(38, 65, rating, ratingTable, stats)
+			;250+ accuracy
+			affShort(9, 250, rating, ratingTable, stats)
+			;70+ total attributes
+			affShort(39, 70, rating, ratingTable, stats)
+			;30 crit strike multi
+			affShort(18, 30, rating, ratingTable, stats)
+			;30 crit strike chance
+			affShort(17, 30, rating, ratingTable, stats)
+			;30 elemental spell damage
+			affShort(22, 30, rating, ratingTable, stats)
+			;15 +% energy shield
+			affShort(28, 15, rating, ratingTable, stats)
 		}
 	}
 	
-	if ((itemType == "Staff") or (itemType == "Warstaff")){
-		;+1 to socketed gems AND +2 to socketed elem gems
-		affShort(26, 3, rating, ratingTable, stats)
 
-		;elemental damage 2h, but counting as 1h 
-		;TODO: flat elem damage on staffs are individual compared to method in affShort,
-		;now it is not precise enough also because of lightning damage
-		;(it is higher than in the other weapon types)
-		;because of that we count it as 1h weapon
-		affShort(20, 70, rating, ratingTable, stats)
-
-		;elemental spell damage 160+
-		affShort(22, 160, rating, ratingTable, stats)
-	}
-	
-	if (itemType == "Jewel"){
-		;% Life, 6 is middle value of all possible
-		affShort(27, 6, rating, ratingTable, stats)
-		;% ES
-		affShort(28, 6, rating, ratingTable, stats)
-		;% Cast speed
-		affShort(29, 3, rating, ratingTable, stats)
-		;% crit multi
-		affShort(18, 10.5, rating, ratingTable, stats)
-		;number of aspd compatible rolls
-		affShort(30, 2, rating, ratingTable, stats)
-		;% damage compatible rolls
-		affShort(31, 2, rating, ratingTable, stats)
-	}
-
-	if (itemType == "Belt"){
-		;70+ life if armour or evasion abse
-		affShort(2, 70, rating, ratingTable, stats)
-		;35 STR
-		affShort(6, 35, rating, ratingTable, stats)
-		;280 armour
-		affShort(32, 280, rating, ratingTable, stats)
-		;45 energy shield
-		affShort(33, 45, rating, ratingTable, stats)
-		;70 total res
-		affShort(8, 70, rating, ratingTable, stats)
-		;30 elemental damage
-		affShort(22, 30, rating, ratingTable, stats)
-		;Reduced flask charges used
-		affShort(34, 1, rating, ratingTable, stats)
-		;Increased flask charges gained
-		affShort(35, 1, rating, ratingTable, stats)
-		;Flask effect duration
-		affShort(36, 1, rating, ratingTable, stats)
-	}
-
-	if (itemType == "Ring"){
-		;55+ life if armour or evasion abse
-		affShort(2, 55, rating, ratingTable, stats)
-		;50 energy shield
-		affShort(33, 50, rating, ratingTable, stats)
-		;xx-11 flat phys to attacks
-		affShort(16, 11, rating, ratingTable, stats)
-		;30 elemental damage
-		affShort(22, 30, rating, ratingTable, stats)
-		;40 increased rarity
-		affShort(37, 40, rating, ratingTable, stats)
-		;80 total res
-		affShort(8, 80, rating, ratingTable, stats)
-		;50+ mana regen
-		affShort(38, 50, rating, ratingTable, stats)
-		;250+ accuracy
-		affShort(9, 250, rating, ratingTable, stats)
-		;75+ total attributes
-		affShort(39, 75, rating, ratingTable, stats)
-	}
-
-	if (itemType == "Amulet"){
-		;55+ life
-		affShort(2, 55, rating, ratingTable, stats)
-		;xx-11 flat phys to attacks
-		affShort(16, 11, rating, ratingTable, stats)
-		;30 elemental damage
-		affShort(22, 30, rating, ratingTable, stats)
-		;40 increased rarity
-		affShort(37, 40, rating, ratingTable, stats)
-		;90 total res
-		affShort(8, 90, rating, ratingTable, stats)
-		;65+ mana regen
-		affShort(38, 65, rating, ratingTable, stats)
-		;250+ accuracy
-		affShort(9, 250, rating, ratingTable, stats)
-		;70+ total attributes
-		affShort(39, 70, rating, ratingTable, stats)
-		;30 crit strike multi
-		affShort(18, 30, rating, ratingTable, stats)
-		;30 crit strike chance
-		affShort(17, 30, rating, ratingTable, stats)
-		;30 elemental spell damage
-		affShort(22, 30, rating, ratingTable, stats)
-		;15 +% energy shield
-		affShort(28, 15, rating, ratingTable, stats)
-	}
-
-	if (itemType == "Quiver"){
-		;75+ life
-		affShort(2, 75, rating, ratingTable, stats)
-		;30 elemental spell damage
-		affShort(22, 30, rating, ratingTable, stats)
-		;30 crit strike multi
-		affShort(18, 30, rating, ratingTable, stats)
-		;30 crit strike chance
-		affShort(17, 30, rating, ratingTable, stats)
-		;70 total res
-		affShort(8, 70, rating, ratingTable, stats)
-	}
 	;if corrupted - discount rating by 25%
 	if (RegExMatch(item, "Corrupted") != 0) {
 		rating *= 0.75
@@ -829,10 +975,14 @@ ratingCounter(itemType, stats, gripType:="1H"){
 	{
 		;Corruption index
 		if (A_Index != 1) { 
-			ratingTable[A_Index] := floorDecimal(ratingTable[A_Index])
+			ratingTable[A_Index] := Format("{:0.2f}", ratingTable[A_Index])
 		}
 	}
-	return [floorDecimal(rating), ratingTable]
+	;format beautiful rating
+	rating := Format("{:0.2f}", rating)
+	rating := regexReplace(rating, "\.?0+$")
+	rating := ThousandsSep(rating)
+	return [rating, ratingTable]
 }
 
 ;get desired affix value from item
@@ -856,12 +1006,8 @@ getArmor(stats, armourToCheck){
 	return 0
 }
 
-floorDecimal(num) {
-
-  num:=Floor(num*100)
-  SetFormat Float, 0.2
-  return num/100
-
+ThousandsSep(x) { 
+   return RegExReplace(x, "(?(?<=\.)(*COMMIT)(*FAIL))\d(?=(\d{3})+(\D|$))", "$0,") 
 }
 
 ;took from ItemInfo
@@ -872,6 +1018,27 @@ parseItemType(stats, namePlate)
 	GripType = None
 	baseType := ""
 	subType := ""
+	
+	;finding rarity level
+	rarityLevel := 0
+	RegexMatch(namePlate, "(?<=Rarity: ).+", rarityLevel)
+	if (rarityLevel == "Normal"){
+		rarityLevel := 1
+	}
+	if (rarityLevel == "Magic"){
+		rarityLevel := 2
+	}
+	if (rarityLevel == "Rare"){
+		rarityLevel := 3
+	}
+	if (rarityLevel == "Unique"){
+		rarityLevel := 4
+	}
+	if (rarityLevel == "Currency"){
+		RegexMatch(namePlate, "(?<=[\n]).+", currencyName)
+		return [rarityLevel, currencyName]
+	}
+	
 	; Check stats section first as weapons usually have their sub type as first line
 	Loop, Parse, stats, `n, `r
 	{
@@ -884,8 +1051,6 @@ parseItemType(stats, namePlate)
 				subType	:= match1
 			}
 			gripType	:= (RegExMatch(match1, "i)\b(Two Handed|Staff|Warstaff|Bow)\b")) ? "2H" : "1H"
-			;MsgBox, %stats%
-			;MsgBox, %baseType%`r%subType%`r%gripType%
 			return [baseType, subType, gripType]
 		}
 	}
@@ -895,7 +1060,8 @@ parseItemType(stats, namePlate)
 	{		
 		; Get third line in case of rare or unique item and retrieve the base item name
 		LoopField := RegExReplace(A_LoopField, "<<.*>>", "")
-		If (RarityLevel > 2)
+		
+		If (rarityLevel > 2)
 		{
 			Loop, Parse, namePlate, `n, `r
 			{
@@ -908,22 +1074,36 @@ parseItemType(stats, namePlate)
 		; Belts, Amulets, Rings, Quivers, Flasks
 		If (RegExMatch(LoopField, "i)\b(Belt|Stygian Vise|Rustic Sash)\b"))
 		{
-			baseType = Item
+			baseType := "Accessory"
 			subType = Belt
 			return [baseType, subType]
 		}		
 		If (RegExMatch(LoopField, "i)\b(Amulet|Talisman)\b")) and not (RegExMatch(LoopField, "i)\bLeaguestone\b"))
 		{
-			baseType = Item
+			baseType := "Accessory"
 			subType = Amulet
 			return [baseType, subType]
 		}
-		If (RegExMatch(LoopField, "\b(Ring|Quiver|Flask)\b", match))
+		If (RegExMatch(LoopField, "\b(Ring)\b", match))
 		{
-			baseType := "Item"
+			baseType := "Accessory"
 			subType := match1
 			return [baseType, subType]
 		}
+		If (RegExMatch(LoopField, "\b(Quiver)\b", match))
+		{
+			baseType := "Armour"
+			subType := match1
+			return [baseType, subType]
+		}
+		If (RegExMatch(LoopField, "\b(Flask)\b", match))
+		{
+			baseType := "Flask"
+			subType := match1
+			return [baseType, subType]
+		}
+		
+		;Maps
 		If (RegExMatch(LoopField, "i)\b(Map)\b"))
 		{
 			Global mapMatchList
