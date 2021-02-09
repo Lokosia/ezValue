@@ -17,6 +17,12 @@ GetItemFromClipboard() {
     return clipboard
 }
 
+;Empty tooltip on mouse click
+;~ means not blocking default mouse click behaviour
+~LButton::
+Tooltip
+return
+
 OnClipboardChange:
 	Global item := GetItemFromClipboard()
 	if (item){
@@ -34,58 +40,79 @@ OnClipboardChange:
 		partsLast := tempItem[%indexLast%]
 
 		;item name
-		RegExMatch(item, "(?<=\n)\D+(?=\n-------)", itemName)
-		;item type
-		itemType := parseItemType(stats, namePlate)[2]
+		RegExMatch(item, "(?<=\n)(\D+?)(?=\n-)", itemName)
 
 		parsedItem := parseItemType(stats, namePlate)
+		if ((parsedItem[1] != "Weapon") and (parsedItem[1] != "Armour") and (parsedItem[1] != "Accessory") and (parsedItem[1] != "Currency") and (parsedItem[1] != "Jewel")) {
+			return
+		}
 		rating := ratingCounter(parsedItem, stats, parsedItem[3])
 		totalRating := rating[1]
 
 		descriptionRating := rating[2]
-		descriptionArray := [0, 0, 0, 0, 0, 0]
+		;beauty whole array
+		Loop % ObjLength(descriptionArray)
+		{
+			descriptionRating[A_Index] := beautyNumber(descriptionRating[A_Index])
+		}
+
+		descriptionArray := []
 		
-		descriptionArray[1] := "-"descriptionRating[1]"% for CORRUPTED and not full link and qual`n"
-		descriptionArray[2] := "+"descriptionRating[2]" for " life1 " Life`n"
-		descriptionArray[3] := "+"descriptionRating[3]" for " es1 " Total Energy Shield`n"
-		descriptionArray[4] := "+"descriptionRating[4]" for " life2 " Life on Energy/Energy hybrid base`n"
-		descriptionArray[5] := "+"descriptionRating[5]" for " es2 " ES on Energy/Energy hybrid base`n"
-		descriptionArray[6] := "+"descriptionRating[6]" for " STR " STR`n"
-		descriptionArray[7] := "+"descriptionRating[7]" for " INT " INT`n"
-		descriptionArray[8] := "+"descriptionRating[8]" for " totalResistance "% Total Resistance`n"
-		descriptionArray[9] := "+"descriptionRating[9]" for " accuracy " Accuracy`n"
-		descriptionArray[10] := "+"descriptionRating[10]" for " ms " Movement Speed`n"
-		descriptionArray[11] := "+"descriptionRating[11]" for " aspd " Attack Speed`n"
+		descriptionArray[1]  := "-"descriptionRating[1]"% for CORRUPTED - can't craft on it`nchanging sockets and links only with Vaal orb on crafting bench`n"
+		;life
+		descriptionArray[2]  := "+"descriptionRating[2]" for " life1 " Life`n"
+		descriptionArray[4]  := "+"descriptionRating[4]" for " life2 " Life on Energy/Energy hybrid base`n"
+		descriptionArray[27] := "+"descriptionRating[27]" for " life3 "% Life`n"
+		;es
+		descriptionArray[3]  := "+"descriptionRating[3]" for " es1 " Total Energy Shield`n"
+		descriptionArray[5]  := "+"descriptionRating[5]" for " es2 " ES on Energy/Energy hybrid base`n"
+		descriptionArray[28] := "+"descriptionRating[28]" for " es3 "% Energy Shield`n"
+		descriptionArray[33] := "+"descriptionRating[33]" for " es4 " to maximum Energy Shield`n"
+		;attributes
+		descriptionArray[6]  := "+"descriptionRating[6]" for " STR " STR`n"
+		descriptionArray[7]  := "+"descriptionRating[7]" for " INT " INT`n"
 		descriptionArray[12] := "+"descriptionRating[12]" for " DEX " DEX`n"
-		descriptionArray[13] := "+"descriptionRating[13]" for " spellDMG " Spell Damage`n"
-		descriptionArray[14] := "+"descriptionRating[14]" for " spellCritChance " Spell Critical Strike Chance`n"
-		descriptionArray[15] := "+"descriptionRating[15]" for " physInc "% increased Physical Damage`n"
-		descriptionArray[16] := "+"descriptionRating[16]" for " physFlat " flat Physical Damage`n"
-		descriptionArray[17] := "+"descriptionRating[17]" for " weaponCritChance " increased Critical Strike Chance`n"
-		descriptionArray[18] := "+"descriptionRating[18]" for " globalCritMulti " to Global Critical Strike Multiplier`n"
-		descriptionArray[19] := "+"descriptionRating[19]" for " socketedBowGems " to Socketed Bow Gems`n"
+		descriptionArray[39] := "+"descriptionRating[39]" for " totalAttributes " to Total Attributes`n"
+		;resistance
+		descriptionArray[8]  := "+"descriptionRating[8]" for " totalResistance "% Total Resistance`n"
+		;elemental damage
 		descriptionArray[20] := "+"descriptionRating[20]" for " elementalFlat1H " Elemental Damage on 1H weapon`n"
 		descriptionArray[21] := "+"descriptionRating[21]" for " elementalFlat2H " Elemental Damage on 2H weapon`n"
 		descriptionArray[22] := "+"descriptionRating[22]" for " elementalSpellDMG " Elemental Spell Damage`n"
-		descriptionArray[23] := "+"descriptionRating[23]" for " spellCritChance " total Critical Strike Chance for Spells`n"
 		descriptionArray[24] := "+"descriptionRating[24]" for " elementalFlatSpells " Elemental Damage to Spells`n"
+		descriptionArray[40] := "+"descriptionRating[40]" for " elementalDmg " increased Elemental Damage with Attack Skills`n"
+		;spell damage
+		descriptionArray[13] := "+"descriptionRating[13]" for " spellDMG " Spell Damage`n"
+		;descriptionArray[14] := "+"descriptionRating[14]" for " spellCritChance " Spell Critical Strike Chance`n"
+		;phys damage
+		descriptionArray[15] := "+"descriptionRating[15]" for " physInc "% increased Physical Damage`n"
+		descriptionArray[16] := "+"descriptionRating[16]" for " physFlat " flat Physical Damage`n"
+		;crits
+		descriptionArray[18] := "+"descriptionRating[18]" for " globalCritMulti " to Global Critical Strike Multiplier`n"
+		descriptionArray[23] := "+"descriptionRating[23]" for " spellCritChance " total Critical Strike Chance for Spells`n"
+		descriptionArray[17] := "+"descriptionRating[17]" for " weaponCritChance " increased Critical Strike Chance`n"
+		;speed
+		descriptionArray[10] := "+"descriptionRating[10]" for " ms "% Movement Speed`n"
+		descriptionArray[11] := "+"descriptionRating[11]" for " aspd "% Attack Speed`n"
+		descriptionArray[29] := "+"descriptionRating[29]" for " castSpeed "% Cast Speed`n"
+		;sockets
+		descriptionArray[19] := "+"descriptionRating[19]" for " socketedBowGems " to Socketed Bow Gems`n"
 		descriptionArray[25] := "+"descriptionRating[25]" for " socketedGems " to Socketed Gems`n"
 		descriptionArray[26] := "+"descriptionRating[26]" for " socketedElemGems " to Socketed Elemental Gems`n"
-		descriptionArray[27] := "+"descriptionRating[27]" for " life3 "% Life`n"
-		descriptionArray[28] := "+"descriptionRating[28]" for " es3 "% Energy Shield`n"
-		descriptionArray[29] := "+"descriptionRating[29]" for " castSpeed "% Cast Speed`n"
+		;jewel rolls
 		descriptionArray[30] := "+"descriptionRating[30]" for " aspdRolls " Attack Speed rolls`n"
 		descriptionArray[31] := "+"descriptionRating[31]" for " damageRolls " Damage rolls`n"
-		descriptionArray[32] := "+"descriptionRating[32]" for " armour " to Armour`n"
-		descriptionArray[33] := "+"descriptionRating[33]" for " es4 " to maximum Energy Shield`n"
+		;flasks
 		descriptionArray[34] := "+"descriptionRating[34]" for " flaskRedCharges "% reduced Flask Charges used`n"
 		descriptionArray[35] := "+"descriptionRating[35]" for " flaskIncCharges "% increased Flask Charges gained`n"
 		descriptionArray[36] := "+"descriptionRating[36]" for " flaskEffDuration "% increased Flask Effect Duration`n"
+		;misk
+		descriptionArray[32] := "+"descriptionRating[32]" for " armour " to Armour`n"
+		descriptionArray[9]  := "+"descriptionRating[9]" for " accuracy " Accuracy`n"
 		descriptionArray[37] := "+"descriptionRating[37]" for " incRarity "% increased Rarity of Items found`n"
 		descriptionArray[38] := "+"descriptionRating[38]" for " manaReg "% increased Mana Regeneration Rate`n"
-		descriptionArray[39] := "+"descriptionRating[39]" for " totalAttributes " to Total Attributes`n"
-		descriptionArray[40] := "+"descriptionRating[40]" for " elementalDmg " increased Elemental Damage with Attack Skills`n"
 		
+		;form description
 		description := ""
 		Loop % ObjLength(descriptionArray)
 		{
@@ -94,19 +121,36 @@ OnClipboardChange:
 			}
 		}
 		description := SubStr(description, 1 , StrLen(description)-1)
-		if (totalRating < 2){
+		
+		;form verdict
+		if (parsedItem[1] == "Currency"){
+			verdict := "It's currency, all currency is usable"
+		} else if (totalRating < 2){
 			verdict := "Bad item, vend to NPC or reroll"
 		} else {
 			verdict := "Good item, use it"
 		}
+		
 		;form tooltip
 		finalString := itemName
 		if (description != ""){
 			finalString := finalString "`n" description
 		}
-		finalString := finalString "`nRating:`t" totalRating "`nResult:`t" verdict
+
+		finalString := finalString "`nRating:`t" beautyNumber(totalRating)
+
+		if (InStr(stats, "Stack Size")){
+			RegExMatch(stats, "\d+", stackSize)
+			
+			;format beautiful sumRating
+			sumRating := (totalRating * stackSize)
+			sumRating := "Stack Value: " beautyNumber(sumRating)
+
+			finalString := finalString "`n" sumRating
+		}
+
+		finalString := finalString "`nResult:`t" verdict
 		
-		;finalString = %itemName%`n`n%description%`nSum Rating: %totalRating%`nVerdict: %verdict%
 		;show tooltip
 		Tooltip % finalString
 		;delete tooltip in 5 sec
@@ -117,6 +161,13 @@ OnClipboardChange:
 RemoveToolTip:
 	ToolTip
 	return
+
+beautyNumber(num){
+	tempNum := Format("{:0.2f}", num)
+	tempNum := regexReplace(tempNum, "\.?0+$")
+	tempNum := ThousandsSep(tempNum)
+	return tempNum
+}
 
 armorBase(byRef stats, neededBase, hybrid:=0){
 	if (neededBase == "Armour"){
@@ -250,9 +301,7 @@ affShort(affix, numberToCheck, ByRef rating, ByRef ratingTable, ByRef stats){
 		convertStat(spellDMG, numberToCheck, rating, ratingTable, affix)
 	}
 	if (affix == 14) {
-		Global spellCritChance
-		spellCritChance := getAff("% increased Critical Strike Chance for Spells")
-		convertStat(spellCritChance, numberToCheck, rating, ratingTable, affix)
+		;--
 	}
 	if (affix == 15) {
 		Global physInc
@@ -769,7 +818,7 @@ ratingCounter(itemType, stats, gripType:="1H"){
 			affShort(13, 55, rating, ratingTable, stats)
 
 			;80+ spell crit chance
-			affShort(14, 80, rating, ratingTable, stats)
+			affShort(23, 80, rating, ratingTable, stats)
 		}
 
 		if (itemType[2] == "Quiver"){
@@ -874,6 +923,10 @@ ratingCounter(itemType, stats, gripType:="1H"){
 	}
 
 	if (itemType[1] == "Jewel") {
+		if (itemType[2] == "Abyss Jewel"){
+			;TODO add mods
+			affShort(2, 36, rating, ratingTable, stats)
+		}
 		if (itemType[2] == "Jewel"){
 			;% Life, 6 is middle value of all possible
 			affShort(27, 6, rating, ratingTable, stats)
@@ -889,8 +942,6 @@ ratingCounter(itemType, stats, gripType:="1H"){
 			affShort(31, 2, rating, ratingTable, stats)
 		}
 	}
-
-	
 
 	if (itemType[1] == "Accessory") {
 		if (itemType[2] == "Belt"){
@@ -964,24 +1015,12 @@ ratingCounter(itemType, stats, gripType:="1H"){
 	}
 	
 
-	;if corrupted - discount rating by 25%
+	;if corrupted - discount rating by 10%
 	if (RegExMatch(item, "Corrupted") != 0) {
-		rating *= 0.75
-		ratingTable[1] := 25
+		rating *= 0.9
+		ratingTable[1] := 10
 	}
 	
-	;beautify numbers
-	Loop % ObjLength(ratingTable)
-	{
-		;Corruption index
-		if (A_Index != 1) { 
-			ratingTable[A_Index] := Format("{:0.2f}", ratingTable[A_Index])
-		}
-	}
-	;format beautiful rating
-	rating := Format("{:0.2f}", rating)
-	rating := regexReplace(rating, "\.?0+$")
-	rating := ThousandsSep(rating)
 	return [rating, ratingTable]
 }
 
@@ -1132,14 +1171,14 @@ parseItemType(stats, namePlate)
 		; Jewels
 		If (RegExMatch(LoopField, "i)(Cobalt|Crimson|Viridian|Prismatic) Jewel", match)) {
 			baseType = Jewel
-			subType := match1 " Jewel"
-			return [baseType, baseType]
+			subType := "Jewel"
+			return [baseType, subType]
 		}
 		; Abyss Jewels
 		If (RegExMatch(LoopField, "i)(Murderous|Hypnotic|Searching|Ghastly) Eye Jewel", match)) {
 			baseType = Jewel
-			subType := match1 " Eye Jewel"
-			return [baseType, baseType]
+			subType := "Abyss Jewel"
+			return [baseType, subType]
 		}
 		
 		; Leaguestones and Scarabs
