@@ -7,6 +7,7 @@ SendMode Input
 #Include, %A_ScriptDir%\lib\ToolTipOpt.ahk
 ToolTipFont("s14", "Arial")
 ToolTipColor("Black", "White")
+Menu, Tray, Icon, %A_ScriptDir%\lib\icon.ico
 
 GetItemFromClipboard() {
     ; Verify the information is what we're looking for
@@ -43,6 +44,7 @@ OnClipboardChange:
 		RegExMatch(item, "(?<=\n)(\D+?)(?=\n-)", itemName)
 
 		parsedItem := parseItemType(stats, namePlate)
+		;exit script on unsupported item
 		if ((parsedItem[1] != "Weapon") and (parsedItem[1] != "Armour") and (parsedItem[1] != "Accessory") and (parsedItem[1] != "Currency") and (parsedItem[1] != "Jewel")) {
 			return
 		}
