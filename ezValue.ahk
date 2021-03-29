@@ -44,6 +44,7 @@ OnClipboardChange:
 		RegExMatch(item, "(?<=\n)(\D+?)(?=\n-)", itemName)
 
 		parsedItem := parseItemType(stats, namePlate)
+
 		;exit script on unsupported item
 		if ((parsedItem[1] != "Weapon") and (parsedItem[1] != "Armour") and (parsedItem[1] != "Accessory") and (parsedItem[1] != "Currency") and (parsedItem[1] != "Jewel")) {
 			return
@@ -385,7 +386,7 @@ affShort(affix, numberToCheck, ByRef rating, ByRef ratingTable, ByRef stats){
 		spellFire := getAff("% increased Fire Damage")
 		spellCold := getAff("% increased Cold Damage")
 		spellLightning := getAff("% increased Lightning Damage")
-
+		
 		spellGlobal := getAff("% increased Spell Damage")
 		spellElementalGlobal := getAff("% increased Elemental Damage")
 
@@ -993,8 +994,8 @@ ratingCounter(itemType, stats, gripType:="1H"){
 			affShort(2, 55, rating, ratingTable, stats)
 			;xx-11 flat phys to attacks
 			affShort(16, 11, rating, ratingTable, stats)
-			;30 elemental damage
-			affShort(22, 30, rating, ratingTable, stats)
+			;40 elemental damage
+			affShort(40, 30, rating, ratingTable, stats)
 			;40 increased rarity
 			affShort(37, 40, rating, ratingTable, stats)
 			;90 total res
@@ -1213,7 +1214,7 @@ parseItemType(stats, namePlate)
 		}
 
 		; Boots
-		If (RegExMatch(LoopField, "\b(Boots|Greaves|Slippers)\b"))
+		If (RegExMatch(LoopField, "\b(Boots|Greaves|Slippers|Shoes)\b"))
 		{
 			baseType = Armour
 			subType = Boots
