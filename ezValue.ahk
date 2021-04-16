@@ -11,10 +11,10 @@ Menu, Tray, Icon, %A_ScriptDir%\lib\icon.ico
 
 GetItemFromClipboard() {
     ; Verify the information is what we're looking for
-    if RegExMatch(clipboard, "Rarity: .*?\R.*?\R?.*?\R--------\R.*") = 0 {
-        ;MsgBox % "Not a PoE item"
+	if RegExMatch(clipboard, "Rarity: .*?\R.*?\R?.*?\R--------\R.*") = 0 {
+		;MsgBox % "Not a PoE item"
 		return false
-    }
+	}
     return clipboard
 }
 
@@ -41,9 +41,13 @@ OnClipboardChange:
 		partsLast := tempItem[%indexLast%]
 
 		;item name
-		RegExMatch(item, "(?<=\n)(\D+?)(?=\n-)", itemName)
+		splitted := StrSplit(namePlate, "`n")
+		itemName := splitted[splitted.MaxIndex()-1]splitted[splitted.MaxIndex()]
 
-		parsedItem := parseItemType(stats, namePlate)
+		;RegExMatch(namePlate, "(.*\n.*)$", itemName)
+		MsgBox % itemName
+
+		parsedItem := parseItemType(namePlate)
 
 		;exit script on unsupported item
 		if ((parsedItem[1] != "Weapon") and (parsedItem[1] != "Armour") and (parsedItem[1] != "Accessory") and (parsedItem[1] != "Currency") and (parsedItem[1] != "Jewel")) {
@@ -1053,7 +1057,7 @@ ThousandsSep(x) {
 }
 
 ;took from ItemInfo
-parseItemType(stats, namePlate)
+parseItemType(namePlate)
 {
 	; Grip type only matters for weapons at this point. For all others it will be 'None'.
 	; Note that shields are armour and not weapons, they are not 1H.
@@ -1076,15 +1080,16 @@ parseItemType(stats, namePlate)
 	if (rarityLevel == "Unique"){
 		rarityLevel := 4
 	}
+
 	if (rarityLevel == "Currency"){
 		RegexMatch(namePlate, "(?<=[\n]).+", currencyName)
 		return [rarityLevel, currencyName]
 	}
 	
-	; Check stats section first as weapons usually have their sub type as first line
-	Loop, Parse, stats, `n, `r
-	{
-		If (RegExMatch(A_LoopField, "i)\b((One Handed|Two Handed) (Axe|Sword|Mace)|Sceptre|Staff|Warstaff|Dagger|Claw|Bow|Wand)\b", match))
+	;get the first line with the item class
+	RegExMatch(namePlate, "^(.*)", firstLine)
+	
+	If (RegExMatch(firstLine, "i)\b((One Hand|Two Hand) (Axes|Swords|Maces)|Sceptres|Staffs|Warstaffs|Daggers|Claws|Bows|Wands)\b", match))
 		{
 			baseType	:= "Weapon"
 			If (RegExMatch(match1, "i)(Sword|Axe|Mace)", subMatch)) {
@@ -1095,167 +1100,152 @@ parseItemType(stats, namePlate)
 			gripType	:= (RegExMatch(match1, "i)\b(Two Handed|Staff|Warstaff|Bow)\b")) ? "2H" : "1H"
 			return [baseType, subType, gripType]
 		}
+
+	;get the last line with the base item name
+	RegExMatch(namePlate, "(.*)$", LoopField)
+
+	; Belts, Amulets, Rings, Quivers, Flasks
+	If (RegExMatch(LoopField, "i)\b(Belt|Stygian Vise|Rustic Sash)\b"))
+	{
+		baseType := "Accessory"
+		subType = Belt
+		return [baseType, subType]
+	}		
+	If (RegExMatch(LoopField, "i)\b(Amulet|Talisman)\b")) and not (RegExMatch(LoopField, "i)\bLeaguestone\b"))
+	{
+		baseType := "Accessory"
+		subType = Amulet
+		return [baseType, subType]
 	}
-
-	; Check name plate section
-	Loop, Parse, namePlate, `n, `r
-	{		
-		; Get third line in case of rare or unique item and retrieve the base item name
-		LoopField := RegExReplace(A_LoopField, "<<.*>>", "")
-		
-		If (rarityLevel > 2)
+	If (RegExMatch(LoopField, "\b(Ring)\b", match))
+	{
+		baseType := "Accessory"
+		subType := match1
+		return [baseType, subType]
+	}
+	If (RegExMatch(LoopField, "\b(Quiver)\b", match))
+	{
+		baseType := "Armour"
+		subType := match1
+		return [baseType, subType]
+	}
+	If (RegExMatch(LoopField, "\b(Flask)\b", match))
+	{
+		baseType := "Flask"
+		subType := match1
+		return [baseType, subType]
+	}
+	
+	;Maps
+	If (RegExMatch(LoopField, "i)\b(Map)\b"))
+	{
+		Global mapMatchList
+		baseType = Map
+		Loop % mapMatchList.MaxIndex()
 		{
-			Loop, Parse, namePlate, `n, `r
+			mapMatch := mapMatchList[A_Index]
+			IfInString, LoopField, %mapMatch%
 			{
-				If (A_Index = 3) {
-				   LoopField := Trim(A_LoopField) ? Trim(A_LoopField) : LoopField
-				}
-			}
-		}
-
-		; Belts, Amulets, Rings, Quivers, Flasks
-		If (RegExMatch(LoopField, "i)\b(Belt|Stygian Vise|Rustic Sash)\b"))
-		{
-			baseType := "Accessory"
-			subType = Belt
-			return [baseType, subType]
-		}		
-		If (RegExMatch(LoopField, "i)\b(Amulet|Talisman)\b")) and not (RegExMatch(LoopField, "i)\bLeaguestone\b"))
-		{
-			baseType := "Accessory"
-			subType = Amulet
-			return [baseType, subType]
-		}
-		If (RegExMatch(LoopField, "\b(Ring)\b", match))
-		{
-			baseType := "Accessory"
-			subType := match1
-			return [baseType, subType]
-		}
-		If (RegExMatch(LoopField, "\b(Quiver)\b", match))
-		{
-			baseType := "Armour"
-			subType := match1
-			return [baseType, subType]
-		}
-		If (RegExMatch(LoopField, "\b(Flask)\b", match))
-		{
-			baseType := "Flask"
-			subType := match1
-			return [baseType, subType]
-		}
-		
-		;Maps
-		If (RegExMatch(LoopField, "i)\b(Map)\b"))
-		{
-			Global mapMatchList
-			baseType = Map
-			Loop % mapMatchList.MaxIndex()
-			{
-				mapMatch := mapMatchList[A_Index]
-				IfInString, LoopField, %mapMatch%
+				If (RegExMatch(LoopField, "\bShaped " . mapMatch))
 				{
-					If (RegExMatch(LoopField, "\bShaped " . mapMatch))
-					{
-						subType = Shaped %mapMatch%
-					}
-					Else
-					{
-						subType = %mapMatch%
-					}
-					return [baseType, subType]
+					subType = Shaped %mapMatch%
 				}
-			}
-			
-			subType = Unknown%A_Space%Map
-			return [baseType, subType]
-		}
-		
-		; Jewels
-		If (RegExMatch(LoopField, "i)(Cobalt|Crimson|Viridian|Prismatic) Jewel", match)) {
-			baseType = Jewel
-			subType := "Jewel"
-			return [baseType, subType]
-		}
-		; Abyss Jewels
-		If (RegExMatch(LoopField, "i)(Murderous|Hypnotic|Searching|Ghastly) Eye Jewel", match)) {
-			baseType = Jewel
-			subType := "Abyss Jewel"
-			return [baseType, subType]
-		}
-		
-		; Leaguestones and Scarabs
-		If (RegExMatch(Loopfield, "i)\b(Leaguestone|Scarab)\b"))
-		{
-			RegexMatch(LoopField, "i)(.*)(Leaguestone|Scarab)", typeMatch)
-			RegexMatch(Trim(typeMatch1), "i)\b(\w+)\W*$", match) ; match last word
-			baseType := Trim(typeMatch2)
-			subType := Trim(match1) " " Trim(typeMatch2)
-			return [baseType, subType]
-		}
-
-
-		; Matching armour types with regular expressions for compact code
-
-		; Shields
-		If (RegExMatch(LoopField, "\b(Buckler|Bundle|Shield)\b"))
-		{
-			baseType = Armour
-			subType = Shield
-			return [baseType, subType]
-		}
-
-		; Gloves
-		If (RegExMatch(LoopField, "\b(Gauntlets|Gloves|Mitts)\b"))
-		{
-			baseType = Armour
-			subType = Gloves
-			return [baseType, subType]
-		}
-
-		; Boots
-		If (RegExMatch(LoopField, "\b(Boots|Greaves|Slippers|Shoes)\b"))
-		{
-			baseType = Armour
-			subType = Boots
-			return [baseType, subType]
-		}
-
-		; Helmets
-		If (RegExMatch(LoopField, "\b(Bascinet|Burgonet|Cage|Circlet|Crown|Hood|Helm|Helmet|Mask|Sallet|Tricorne)\b"))
-		{
-			baseType = Armour
-			subType = Helmet
-			return [baseType, subType]
-		}
-
-		; Note: Body armours can have "Pelt" in their randomly assigned name,
-		;    explicitly matching the three pelt base items to be safe.
-
-		If (RegExMatch(LoopField, "\b(Iron Hat|Leather Cap|Rusted Coif|Wolf Pelt|Ursine Pelt|Lion Pelt)\b"))
-		{
-			baseType = Armour
-			subType = Helmet
-			return [baseType, subType]
-		}
-
-		; BodyArmour
-		; Note: Not using "$" means "Leather" could match "Leather Belt", therefore we first check that the item is not a belt. (belts are currently checked earlier so this is redundant, but the order might change)
-		If (!RegExMatch(LoopField, "\b(Belt)\b"))
-		{
-			If (RegExMatch(LoopField, "\b(Armour|Brigandine|Chainmail|Coat|Doublet|Garb|Hauberk|Jacket|Lamellar|Leather|Plate|Raiment|Regalia|Ringmail|Robe|Tunic|Vest|Vestment)\b"))
-			{
-				baseType = Armour
-				subType = BodyArmour
+				Else
+				{
+					subType = %mapMatch%
+				}
 				return [baseType, subType]
 			}
 		}
+		
+		subType = Unknown%A_Space%Map
+		return [baseType, subType]
+	}
+	
+	; Jewels
+	If (RegExMatch(LoopField, "i)(Cobalt|Crimson|Viridian|Prismatic) Jewel", match)) {
+		baseType = Jewel
+		subType := "Jewel"
+		return [baseType, subType]
+	}
+	; Abyss Jewels
+	If (RegExMatch(LoopField, "i)(Murderous|Hypnotic|Searching|Ghastly) Eye Jewel", match)) {
+		baseType = Jewel
+		subType := "Abyss Jewel"
+		return [baseType, subType]
+	}
+	
+	; Leaguestones and Scarabs
+	If (RegExMatch(Loopfield, "i)\b(Leaguestone|Scarab)\b"))
+	{
+		RegexMatch(LoopField, "i)(.*)(Leaguestone|Scarab)", typeMatch)
+		RegexMatch(Trim(typeMatch1), "i)\b(\w+)\W*$", match) ; match last word
+		baseType := Trim(typeMatch2)
+		subType := Trim(match1) " " Trim(typeMatch2)
+		return [baseType, subType]
+	}
 
-		If (RegExMatch(LoopField, "\b(Chestplate|Full Dragonscale|Full Wyrmscale|Necromancer Silks|Shabby Jerkin|Silken Wrap)\b"))
+
+	; Matching armour types with regular expressions for compact code
+
+	; Shields
+	If (RegExMatch(LoopField, "\b(Buckler|Bundle|Shield)\b"))
+	{
+		baseType = Armour
+		subType = Shield
+		return [baseType, subType]
+	}
+
+	; Gloves
+	If (RegExMatch(LoopField, "\b(Gauntlets|Gloves|Mitts)\b"))
+	{
+		baseType = Armour
+		subType = Gloves
+		return [baseType, subType]
+	}
+
+	; Boots
+	If (RegExMatch(LoopField, "\b(Boots|Greaves|Slippers|Shoes)\b"))
+	{
+		baseType = Armour
+		subType = Boots
+		return [baseType, subType]
+	}
+
+	; Helmets
+	If (RegExMatch(LoopField, "\b(Bascinet|Burgonet|Cage|Circlet|Crown|Hood|Helm|Helmet|Mask|Sallet|Tricorne)\b"))
+	{
+		baseType = Armour
+		subType = Helmet
+		return [baseType, subType]
+	}
+
+	; Note: Body armours can have "Pelt" in their randomly assigned name,
+	;    explicitly matching the three pelt base items to be safe.
+
+	If (RegExMatch(LoopField, "\b(Iron Hat|Leather Cap|Rusted Coif|Wolf Pelt|Ursine Pelt|Lion Pelt)\b"))
+	{
+		baseType = Armour
+		subType = Helmet
+		return [baseType, subType]
+	}
+
+	; BodyArmour
+	; Note: Not using "$" means "Leather" could match "Leather Belt", therefore we first check that the item is not a belt. (belts are currently checked earlier so this is redundant, but the order might change)
+	If (!RegExMatch(LoopField, "\b(Belt)\b"))
+	{
+		If (RegExMatch(LoopField, "\b(Armour|Brigandine|Chainmail|Coat|Doublet|Garb|Hauberk|Jacket|Lamellar|Leather|Plate|Raiment|Regalia|Ringmail|Robe|Tunic|Vest|Vestment)\b"))
 		{
 			baseType = Armour
 			subType = BodyArmour
 			return [baseType, subType]
 		}
+	}
+
+	If (RegExMatch(LoopField, "\b(Chestplate|Full Dragonscale|Full Wyrmscale|Necromancer Silks|Shabby Jerkin|Silken Wrap)\b"))
+	{
+		baseType = Armour
+		subType = BodyArmour
+		return [baseType, subType]
 	}
 }
