@@ -863,8 +863,8 @@ ratingCounter(itemType, stats, gripType:="1H"){
 
 			;attack speed 20+
 			affShort(11, 20, rating, ratingTable, stats)
-
-			if (itemType == "Bow") {
+			
+			if (itemType[2] == "Bow") {
 				;weapon crit chance 30+
 				affShort(17, 30, rating, ratingTable, stats)
 				;crit multi 30+
@@ -1086,7 +1086,7 @@ parseItemType(namePlate)
 	;get the first line with the item class
 	RegExMatch(namePlate, "^(.*)", firstLine)
 	
-	If (RegExMatch(firstLine, "i)\b((One Hand|Two Hand) (Axes|Swords|Maces)|Sceptres|Staffs|Warstaffs|Daggers|Claws|Bows|Wands)\b", match))
+	If (RegExMatch(firstLine, "i)\b((One Hand|Two Hand) (Axes|Swords|Maces)|Sceptres|Staves|Warstaffs|Daggers|Claws|Bows|Wands)\b", match))
 		{
 			baseType	:= "Weapon"
 			If (RegExMatch(match1, "i)(Swords|Axes|Maces)", subMatch)) {
