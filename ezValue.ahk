@@ -44,15 +44,13 @@ OnClipboardChange:
 		splitted := StrSplit(namePlate, "`n")
 		itemName := splitted[splitted.MaxIndex()-1]splitted[splitted.MaxIndex()]
 
-		;RegExMatch(namePlate, "(.*\n.*)$", itemName)
-		MsgBox % itemName
-
 		parsedItem := parseItemType(namePlate)
 
 		;exit script on unsupported item
 		if ((parsedItem[1] != "Weapon") and (parsedItem[1] != "Armour") and (parsedItem[1] != "Accessory") and (parsedItem[1] != "Currency") and (parsedItem[1] != "Jewel")) {
 			return
 		}
+		
 		rating := ratingCounter(parsedItem, stats, parsedItem[3])
 		totalRating := rating[1]
 
@@ -567,7 +565,6 @@ ratingCounter(itemType, stats, gripType:="1H"){
 	;40 elemental damage with attack skills
 	;MsgBox % stats
 	if (itemType[1] == "Currency") {
-
 		scroll_of_wisdom := 1
 		portal_scroll := scroll_of_wisdom * 3
 		orb_of_transmutation := portal_scroll * 7
@@ -1082,7 +1079,7 @@ parseItemType(namePlate)
 	}
 
 	if (rarityLevel == "Currency"){
-		RegexMatch(namePlate, "(?<=[\n]).+", currencyName)
+		RegexMatch(namePlate, ".*$", currencyName)
 		return [rarityLevel, currencyName]
 	}
 	
