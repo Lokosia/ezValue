@@ -1089,12 +1089,15 @@ parseItemType(namePlate)
 	If (RegExMatch(firstLine, "i)\b((One Hand|Two Hand) (Axes|Swords|Maces)|Sceptres|Staffs|Warstaffs|Daggers|Claws|Bows|Wands)\b", match))
 		{
 			baseType	:= "Weapon"
-			If (RegExMatch(match1, "i)(Sword|Axe|Mace)", subMatch)) {
+			If (RegExMatch(match1, "i)(Swords|Axes|Maces)", subMatch)) {
 				subType	:= subMatch1
 			} Else {
 				subType	:= match1
 			}
-			gripType	:= (RegExMatch(match1, "i)\b(Two Handed|Staff|Warstaff|Bow)\b")) ? "2H" : "1H"
+			subType:=SubStr(subType,1,StrLen(subType)-1)
+			
+			gripType	:= (RegExMatch(match1, "i)\b(Two Hand|Staffs|Warstaffs|Bows)\b")) ? "2H" : "1H"
+			
 			return [baseType, subType, gripType]
 		}
 
