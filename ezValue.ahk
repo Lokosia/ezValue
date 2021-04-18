@@ -910,7 +910,7 @@ ratingCounter(itemType, stats, gripType:="1H"){
 			}
 		}
 		
-		if ((itemType[2] == "Staff") or (itemType[2] == "Warstaff")){
+		if ((itemType[2] == "Stave") or (itemType[2] == "Warstave")){
 			;+1 to socketed gems AND +2 to socketed elem gems
 			affShort(26, 3, rating, ratingTable, stats)
 
@@ -1086,7 +1086,7 @@ parseItemType(namePlate)
 	;get the first line with the item class
 	RegExMatch(namePlate, "^(.*)", firstLine)
 	
-	If (RegExMatch(firstLine, "i)\b((One Hand|Two Hand) (Axes|Swords|Maces)|Sceptres|Staves|Warstaffs|Daggers|Claws|Bows|Wands)\b", match))
+	If (RegExMatch(firstLine, "i)\b((One Hand|Two Hand) (Axes|Swords|Maces)|Sceptres|Staves|Warstaves|Daggers|Claws|Bows|Wands)\b", match))
 		{
 			baseType	:= "Weapon"
 			If (RegExMatch(match1, "i)(Swords|Axes|Maces)", subMatch)) {
