@@ -588,6 +588,11 @@ ratingCounter(itemType, stats, gripType:="1H"){
 		blessed_orb := regal_orb * 1
 		exalted_orb := regal_orb * 5
 		divine_orb := exalted_orb * 4
+		ancient_orb := chaos_orb * 10
+		vaal_orb := chaos_orb / 3
+		silver_coin := chaos_orb / 6
+		cartographers_chisel := chaos_orb / 4
+		annulment_orb := chaos_orb * 6
 
 		if (itemType[2] == "Scroll of Wisdom") {
 			rating += scroll_of_wisdom
@@ -667,14 +672,32 @@ ratingCounter(itemType, stats, gripType:="1H"){
 		if (itemType[2] == "Exalted Orb") {
 			rating += exalted_orb
 		}
-		if (itemType[2] == "Exalted Orb") {
-			rating += exalted_orb
-		}
 		if (itemType[2] == "Exalted Shard") {
 			rating += exalted_orb/20
 		}
 		if (itemType[2] == "Divine Orb") {
 			rating += divine_orb
+		}
+		if (itemType[2] == "Ancient Orb") {
+			rating += ancient_orb
+		}
+		if (itemType[2] == "Ancient Shard") {
+			rating += ancient_orb/20
+		}
+		if (itemType[2] == "Vaal Orb") {
+			rating += vaal_orb
+		}
+		if (itemType[2] == "Silver Coin") {
+			rating += silver_coin
+		}
+		if (itemType[2] == "Cartographer's Chisel") {
+			rating += cartographers_chisel
+		}
+		if (itemType[2] == "Orb of Annulment") {
+			rating += annulment_orb
+		}
+		if (itemType[2] == "Annulment Shard") {
+			rating += annulment_orb / 20
 		}
 		
 	}
@@ -736,8 +759,8 @@ ratingCounter(itemType, stats, gripType:="1H"){
 		}
 
 		if (itemType[2] == "Boots") {
-			;movement speed 20+
-			affShort(10, 20, rating, ratingTable, stats)
+			;movement speed 30+
+			affShort(10, 30, rating, ratingTable, stats)
 
 			;life 65+ on armor/evasion base
 			affShort(2, 65, rating, ratingTable, stats)
@@ -925,11 +948,12 @@ ratingCounter(itemType, stats, gripType:="1H"){
 			affShort(22, 160, rating, ratingTable, stats)
 		}
 	}
-
+	
 	if (itemType[1] == "Jewel") {
 		if (itemType[2] == "Abyss Jewel"){
 			;TODO add mods
 			affShort(2, 36, rating, ratingTable, stats)
+			MsgBox , Abyss jewels are not supported yet
 		}
 		if (itemType[2] == "Jewel"){
 			;% Life, 6 is middle value of all possible
@@ -1020,9 +1044,11 @@ ratingCounter(itemType, stats, gripType:="1H"){
 	
 
 	;if corrupted - discount rating by 10%
-	if (RegExMatch(item, "Corrupted") != 0) {
-		rating *= 0.9
-		ratingTable[1] := 10
+	if(itemType[1] != "Currency"){
+		if (RegExMatch(item, "Corrupted") != 0) {
+			rating *= 0.9
+			ratingTable[1] := 10
+		}
 	}
 	
 	return [rating, ratingTable]
