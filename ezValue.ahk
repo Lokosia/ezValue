@@ -213,6 +213,9 @@ armorBase(byRef stats, neededBase, hybrid:=0){
 
 convertStat(affixStat, fullStat, ByRef rating, ByRef ratingTable, ratingTableIndex){
 	convertedStat := affixStat/fullStat
+	if (convertedStat > 1) {
+		convertedStat := 1
+	}
 	rating += %convertedStat%
 	ratingTable[ratingTableIndex] += convertedStat
 }
@@ -953,7 +956,6 @@ ratingCounter(itemType, stats, gripType:="1H"){
 		if (itemType[2] == "Abyss Jewel"){
 			;TODO add mods
 			affShort(2, 36, rating, ratingTable, stats)
-			MsgBox , Abyss jewels are not supported yet
 		}
 		if (itemType[2] == "Jewel"){
 			;% Life, 6 is middle value of all possible
