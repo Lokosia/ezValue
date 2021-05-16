@@ -30,19 +30,39 @@ OnClipboardChange:
 		tempItem := StrReplace(item, "`r`n--------`r`n", "``")
 		tempItem := StrSplit(tempItem, "``")
 
+		;collect info and split it to vars
+		;Item class, rarity name
 		namePlate	:= tempItem[1]
-		stats		:= tempItem[2]
+		
+		;Quality, Armor/ES/Evasion
+		;we have to find actually section and save var as global to use it easily later
+		Global stats
+		if (InStr(tempItem[2], "Armour") or InStr(tempItem[2], "Energy Shield") or InStr(tempItem[2], "Evasion")){
+			stats		:= tempItem[2]
+		} else {
+			stats := ""
+		}
+
+		;unused vars, not always represents var names because it is just numbers of sections, bugs with rings and abyss belts
+		/*
 		requirements := tempItem[3]
 		sockets := tempItem[4]
 		ilvl := tempItem[5]
 		prefsuf := tempItem[6]
+		
 
 		indexLast := tempItem[0]
 		partsLast := tempItem[%indexLast%]
+		*/
 
 		;item name
 		splitted := StrSplit(namePlate, "`n")
-		itemName := splitted[splitted.MaxIndex()-1]splitted[splitted.MaxIndex()]
+		;at item rarity > normal item name becomes 2 line name, at normal rarity it is 1 line, so we have to correctly find name
+		if (splitted.MaxIndex() == 4){
+			itemName := splitted[3]splitted[4]
+		} else {
+			itemName := splitted[3]
+		}
 
 		parsedItem := parseItemType(namePlate)
 
@@ -51,7 +71,7 @@ OnClipboardChange:
 			return
 		}
 		
-		rating := ratingCounter(parsedItem, stats, parsedItem[3])
+		rating := ratingCounter(parsedItem, parsedItem[3])
 		totalRating := rating[1]
 
 		descriptionRating := rating[2]
@@ -88,7 +108,6 @@ OnClipboardChange:
 		descriptionArray[40] := "+"descriptionRating[40]" for " elementalDmg " increased Elemental Damage with Attack Skills`n"
 		;spell damage
 		descriptionArray[13] := "+"descriptionRating[13]" for " spellDMG " Spell Damage`n"
-		;descriptionArray[14] := "+"descriptionRating[14]" for " spellCritChance " Spell Critical Strike Chance`n"
 		;phys damage
 		descriptionArray[15] := "+"descriptionRating[15]" for " physInc "% increased Physical Damage`n"
 		descriptionArray[16] := "+"descriptionRating[16]" for " physFlat " flat Physical Damage`n"
@@ -111,20 +130,71 @@ OnClipboardChange:
 		descriptionArray[34] := "+"descriptionRating[34]" for " flaskRedCharges "% reduced Flask Charges used`n"
 		descriptionArray[35] := "+"descriptionRating[35]" for " flaskIncCharges "% increased Flask Charges gained`n"
 		descriptionArray[36] := "+"descriptionRating[36]" for " flaskEffDuration "% increased Flask Effect Duration`n"
-		;misk
+		;misc
 		descriptionArray[32] := "+"descriptionRating[32]" for " armour " to Armour`n"
 		descriptionArray[9]  := "+"descriptionRating[9]" for " accuracy " Accuracy`n"
 		descriptionArray[37] := "+"descriptionRating[37]" for " incRarity "% increased Rarity of Items found`n"
 		descriptionArray[38] := "+"descriptionRating[38]" for " manaReg "% increased Mana Regeneration Rate`n"
+		descriptionArray[14] := "+"descriptionRating[14]" for " avoidElemAil "% chance to Avoid Elemental Ailments`n"
 		
 		;form description
-		description := ""
+		description := "`n"
 		Loop % ObjLength(descriptionArray)
 		{
 			if (descriptionRating[A_Index] != 0) {
 				description := description descriptionArray[A_Index]
 			}
 		}
+		;open pref suff check
+		
+		prefixNumber := 0
+		;iterate throu all matches
+		while pos := RegExMatch(item, "Prefix", matched, A_Index=1?1: pos+StrLen(matched)) {
+			;sum matches
+			prefixNumber++
+		}
+
+		suffixNumber := 0
+		;iterate throu all matches
+		while pos := RegExMatch(item, "Suffix", matched, A_Index=1?1: pos+StrLen(matched)) {
+			;sum matches
+			suffixNumber++
+		}
+
+		if (parsedItem[1] != "Jewel"){
+			craftedSuffNumber := 0
+			if(RegExMatch(item, "Master Crafted Suffix") > 0){
+				craftedSuffNumber++
+			}
+
+			craftedPrefNumber := 0
+			if(RegExMatch(item, "Master Crafted Prefix") > 0){
+				craftedPrefNumber++
+			}
+		}
+		;craftAllowed := false
+		craftAllowed := (craftedSuffNumber == 0) and (craftedPrefNumber == 0)
+		affLimit := parsedItem[1] == "Jewel" ? 2 : 3
+		
+		;Open suff and open preff
+		if (prefixNumber < affLimit and prefixNumber != 0 and suffixNumber < affLimit and suffixNumber != 0){
+			description := description "`nOpen Suffix and Prefix, craft and augment it "
+		} else if (prefixNumber < affLimit and prefixNumber != 0){
+			if(craftAllowed){
+				description := description "`nPrefix craft possible "
+			}else{
+				description := description "`nPrefix augment possible "
+			}
+		} else if (suffixNumber < affLimit and suffixNumber != 0){
+			if(craftAllowed){
+				description := description "`nSuffix craft possible "
+			}else{
+				description := description "`nSuffix augment possible "
+			}
+		} else if (prefixNumber == affLimit and suffixNumber == affLimit){
+			description := description "`nNo room for affixes "
+		}
+		
 		description := SubStr(description, 1 , StrLen(description)-1)
 		
 		;form verdict
@@ -142,7 +212,7 @@ OnClipboardChange:
 			finalString := finalString "`n" description
 		}
 
-		finalString := finalString "`nRating:`t" beautyNumber(totalRating)
+		finalString := finalString "`n`nRating:`t" beautyNumber(totalRating)
 
 		if (InStr(stats, "Stack Size")){
 			RegExMatch(stats, "\d+", stackSize)
@@ -157,7 +227,11 @@ OnClipboardChange:
 		finalString := finalString "`nResult:`t" verdict
 		
 		;show tooltip
-		Tooltip % finalString
+		MouseGetPos, xpos, ypos
+		;coord limiter
+		xpos := xpos + 36 > A_ScreenWidth ? A_ScreenWidth - 36: xpos + 36
+		ypos := ypos + 36 > A_ScreenHeight ? A_ScreenHeight - 36: ypos + 36
+		Tooltip % finalString, xpos,ypos
 		;delete tooltip in 5 sec
 		SetTimer, RemoveToolTip, -5000
 	}
@@ -174,7 +248,8 @@ beautyNumber(num){
 	return tempNum
 }
 
-armorBase(byRef stats, neededBase, hybrid:=0){
+armorBase(neededBase, hybrid:=0){
+	Global stats
 	if (neededBase == "Armour"){
 		if (hybrid == 0){
 			if ((RegExMatch(stats, "Armour") != 0) and (RegExMatch(stats, "Evasion") == 0) and (RegExMatch(stats, "Energy") == 0)){
@@ -211,8 +286,12 @@ armorBase(byRef stats, neededBase, hybrid:=0){
 	return false
 }
 
-convertStat(affixStat, fullStat, ByRef rating, ByRef ratingTable, ratingTableIndex){
+convertStat(affixStat, fullStat, ratingTableIndex){
+	Global rating
+	Global ratingTable
+	
 	convertedStat := affixStat/fullStat
+	;Limit rating to no more than 1, for better valueing
 	if (convertedStat > 1) {
 		convertedStat := 1
 	}
@@ -220,32 +299,37 @@ convertStat(affixStat, fullStat, ByRef rating, ByRef ratingTable, ratingTableInd
 	ratingTable[ratingTableIndex] += convertedStat
 }
 
-affShort(affix, numberToCheck, ByRef rating, ByRef ratingTable, ByRef stats){
+;add new affixes to value here
+affShort(affix, numberToCheck){
+	Global stats
+	Global rating
+	Global ratingTable
+
 	if (affix == 2) {
-		if (!armorBase(stats, "Energy", 1) and !armorBase(stats, "Energy")){
+		if (!armorBase("Energy", 1) and !armorBase("Energy")){
 			Global life1
 			life1 := getAff(" to maximum Life")
-			convertStat(life1, numberToCheck, rating, ratingTable, affix)
+			convertStat(life1, numberToCheck, affix)
 		}
 	}
 	if (affix == 3) {
 		Global es1
-		es1 := getArmor(stats, "Energy Shield")
-		convertStat(es1, numberToCheck, rating, ratingTable, affix)
+		es1 := getArmor("Energy Shield")
+		convertStat(es1, numberToCheck, affix)
 	}
 	if (affix == 4) {
-		if (armorBase(stats, "Energy", 1) or armorBase(stats, "Energy")){
+		if (armorBase("Energy", 1) or armorBase("Energy")){
 			Global life2
 			life2 := getAff(" to maximum Life")
-			convertStat(life2, numberToCheck*2, rating, ratingTable, affix)
+			convertStat(life2, numberToCheck*2, affix)
 			
 		}
 	}
 	if (affix == 5) {
-		if (armorBase(stats, "Energy", 1) or armorBase(stats, "Energy")){
+		if (armorBase("Energy", 1) or armorBase("Energy")){
 			Global es2
-			es2 := getArmor(stats, "Energy Shield")
-			convertStat(es2, numberToCheck*2, rating, ratingTable, affix)
+			es2 := getArmor("Energy Shield")
+			convertStat(es2, numberToCheck*2, affix)
 		}
 	}
 	if (affix == 6) {
@@ -253,14 +337,14 @@ affShort(affix, numberToCheck, ByRef rating, ByRef ratingTable, ByRef stats){
 		str1 := getAff(" to Strength")
 		str2 := getAff(" to all Attributes")
 		STR := (str1+str2)
-		convertStat(STR, numberToCheck, rating, ratingTable, affix)
+		convertStat(STR, numberToCheck, affix)
 	}
 	if (affix == 7) {
 		Global INT
 		int1 := getAff(" to Intelligence")
 		int2 := getAff(" to all Attributes")
 		INT := (int1+int2)
-		convertStat(INT, numberToCheck, rating, ratingTable, affix)
+		convertStat(INT, numberToCheck, affix)
 	}
 	if (affix == 8) {
 		Global totalResistance
@@ -277,68 +361,70 @@ affShort(affix, numberToCheck, ByRef rating, ByRef ratingTable, ByRef stats){
 		fireAndLightning := getAff("% to Fire and Lightning Resistances")*2
 
 		totalResistance := (fire+cold+lightning+allElements+fireAndCold+coldAndLightning+fireAndLightning+chaos+cchaos+fchaos+lchaos)
-		convertStat(totalResistance, numberToCheck, rating, ratingTable, affix)
+		convertStat(totalResistance, numberToCheck, affix)
 	}
 	if (affix == 9) {
 		Global accuracy
 		accuracy := getAff(" to Accuracy Rating")
-		convertStat(accuracy, numberToCheck, rating, ratingTable, affix)
+		convertStat(accuracy, numberToCheck, affix)
 	}
 	if (affix == 10) {
 		Global ms
 		ms := getAff("% increased Movement Speed")
-		convertStat(ms, numberToCheck, rating, ratingTable, affix)
+		convertStat(ms, numberToCheck, affix)
 	}
 	if (affix == 11) {
 		Global aspd
 		aspd := getAff("% increased Attack Speed")
 		comboSpeed := getAff("% increased Attack and Cast Speed")
 		aspd += comboSpeed
-		convertStat(aspd, numberToCheck, rating, ratingTable, affix)
+		convertStat(aspd, numberToCheck, affix)
 	}
 	if (affix == 12) {
 		Global DEX
 		DEX := getAff(" to Dexterity")
 		dex2 := getAff(" to all Attributes")
 		DEX += dex2
-		convertStat(DEX, numberToCheck, rating, ratingTable, affix)
+		convertStat(DEX, numberToCheck, affix)
 	}
 	if (affix == 13) {
 		Global spellDMG
 		spellDMG := getAff("% increased Spell Damage")
-		convertStat(spellDMG, numberToCheck, rating, ratingTable, affix)
+		convertStat(spellDMG, numberToCheck, affix)
 	}
 	if (affix == 14) {
-		;--
+		Global avoidElemAil
+		avoidElemAil := getAff("% chance to Avoid Elemental Ailments")
+		convertStat(avoidElemAil, numberToCheck, affix)
 	}
 	if (affix == 15) {
 		Global physInc
 		physInc := getAff("% increased Physical Damage")
-		convertStat(physInc, numberToCheck, rating, ratingTable, affix)
+		convertStat(physInc, numberToCheck, affix)
 	}
 	if (affix == 16) {
 		Global physFlat
 		physFlat := getAff(" Physical Damage")
-		convertStat(physFlat, numberToCheck, rating, ratingTable, affix)
+		convertStat(physFlat, numberToCheck, affix)
 	}
 	if (affix == 17) {
 		Global weaponCritChance
 		weaponCritChance := getAff("% increased Critical Strike Chance")
 		globalCritChance := getAff("% increased Global Critical Strike Chance")
 		weaponCritChance += globalCritChance
-		convertStat(weaponCritChance, numberToCheck, rating, ratingTable, affix)
+		convertStat(weaponCritChance, numberToCheck, affix)
 	}
 	if (affix == 18) {
 		Global globalCritMulti
 		globalCritMulti := getAff("% to Global Critical Strike Multiplier")
-		convertStat(globalCritMulti, numberToCheck, rating, ratingTable, affix)
+		convertStat(globalCritMulti, numberToCheck, affix)
 	}
 	if (affix == 19) {
 		Global socketedBowGems
 		socketedBowGems := getAff(" to Level of Socketed Bow Gems")
 		addSocketedGems := getAff(" to Level of Socketed Gems")
 		socketedBowGems += addSocketedGems
-		convertStat(socketedBowGems, numberToCheck, rating, ratingTable, affix)
+		convertStat(socketedBowGems, numberToCheck, affix)
 	}
 	if (affix == 20) {
 		global elementalFlat1H
@@ -362,7 +448,7 @@ affShort(affix, numberToCheck, ByRef rating, ByRef ratingTable, ByRef stats){
 		}
 		
 		elementalFlat1H := (flatCold+flatFire+flatLightning)
-		convertStat(elementalFlat1H, numberToCheck + addLightning, rating, ratingTable, affix)
+		convertStat(elementalFlat1H, numberToCheck + addLightning, affix)
 	}
 	if (affix == 21) {
 		global elementalFlat2H
@@ -384,7 +470,7 @@ affShort(affix, numberToCheck, ByRef rating, ByRef ratingTable, ByRef stats){
 			addLightning := (90*2)/modsNum
 		}
 		elementalFlat2H := (flatCold+flatFire+flatLightning)
-		convertStat(elementalFlat2H, numberToCheck + addLightning, rating, ratingTable, affix)
+		convertStat(elementalFlat2H, numberToCheck + addLightning, affix)
 	}
 	if (affix == 22) {
 		global elementalSpellDMG
@@ -396,14 +482,14 @@ affShort(affix, numberToCheck, ByRef rating, ByRef ratingTable, ByRef stats){
 		spellElementalGlobal := getAff("% increased Elemental Damage")
 
 		elementalSpellDMG := (spellFire + spellCold + spellLightning + spellGlobal + spellElementalGlobal)
-		convertStat(elementalSpellDMG, numberToCheck, rating, ratingTable, affix)
+		convertStat(elementalSpellDMG, numberToCheck, affix)
 	}
 	if (affix == 23) {
 		global spellCritChance
 		spellCritChance := getAff("% increased Critical Strike Chance for Spells")
 		globalCritChance := getAff("% increased Global Critical Strike Chance")
 		spellCritChance += globalCritChance
-		convertStat(spellCritChance, numberToCheck, rating, ratingTable, affix)
+		convertStat(spellCritChance, numberToCheck, affix)
 	}
 	if (affix == 24) {
 		global elementalFlatSpells
@@ -415,12 +501,12 @@ affShort(affix, numberToCheck, ByRef rating, ByRef ratingTable, ByRef stats){
 			addLightning = 40
 		}
 		elementalFlatSpells := (flatFireSpell + flatColdSpell + flatLightningSpell)
-		convertStat(elementalFlatSpells, numberToCheck + addLightning, rating, ratingTable, affix)
+		convertStat(elementalFlatSpells, numberToCheck + addLightning, affix)
 	}
 	if (affix == 25) {
 		Global socketedGems
 		socketedGems := getAff(" to Level of Socketed Gems")
-		convertStat(socketedGems, numberToCheck, rating, ratingTable, affix)
+		convertStat(socketedGems, numberToCheck, affix)
 	}
 	if (affix == 26) {
 		Global socketedElemGems
@@ -431,30 +517,30 @@ affShort(affix, numberToCheck, ByRef rating, ByRef ratingTable, ByRef stats){
 		socketedOverallGems := getAff(" to Level of Socketed Gems")
 		socketedElemGems := (fireGem + coldGem + lightningGem + elementalGem + socketedOverallGems)
 
-		convertStat(socketedElemGems, numberToCheck, rating, ratingTable, affix)
+		convertStat(socketedElemGems, numberToCheck, affix)
 	}
 	if (affix == 27) {
 		Global life3
 		life3 := getAff("% increased maximum Life")
-		convertStat(life3, numberToCheck, rating, ratingTable, affix)
+		convertStat(life3, numberToCheck, affix)
 	}
 	if (affix == 28) {
 		Global es3
 		es3 := getAff("% increased maximum Energy Shield")
-		convertStat(es3, numberToCheck, rating, ratingTable, affix)
+		convertStat(es3, numberToCheck, affix)
 	}
 	if (affix == 29) {
 		Global castSpeed
 		castSpeed := getAff("% increased Cast Speed")
 		comboSpeed := getAff("% increased Attack and Cast Speed")
 		castSpeed += comboSpeed
-		convertStat(castSpeed, numberToCheck, rating, ratingTable, affix)
+		convertStat(castSpeed, numberToCheck, affix)
 	}
 	if (affix == 30) {
 		Global aspdRolls
 		needle := "Speed"
 		regexReplace(item, needle, needle, aspdRolls)
-		convertStat(aspdRolls, numberToCheck, rating, ratingTable, affix)
+		convertStat(aspdRolls, numberToCheck, affix)
 	}
 	if (affix == 31) {
 		Global damageRolls
@@ -463,65 +549,71 @@ affShort(affix, numberToCheck, ByRef rating, ByRef ratingTable, ByRef stats){
 		regexReplace(item, needle, needle, damageRolls)
 		regexReplace(item, needle2, needle2, critRolls)
 		damageRolls += critRolls
-		convertStat(damageRolls, numberToCheck, rating, ratingTable, affix)
+		convertStat(damageRolls, numberToCheck, affix)
 	}
 	if (affix == 32) {
 		Global armour
 		armour := getAff(" to Armour")
-		convertStat(armour, numberToCheck, rating, ratingTable, affix)
+		convertStat(armour, numberToCheck, affix)
 	}
 	if (affix == 33) {
 		Global es4
 		es4 := getAff(" to maximum Energy Shield")
-		convertStat(es4, numberToCheck, rating, ratingTable, affix)
+		convertStat(es4, numberToCheck, affix)
 	}
 	if (affix == 34) {
 		Global flaskRedCharges
 		flaskRedCharges := getAff("% reduced Flask Charges used")
-		convertStat(flaskRedCharges, flaskRedCharges, rating, ratingTable, affix)
+		convertStat(flaskRedCharges, flaskRedCharges, affix)
 	}
 	if (affix == 35) {
 		Global flaskIncCharges
 		flaskIncCharges := getAff("% increased Flask Charges gained")
-		convertStat(flaskIncCharges, flaskIncCharges, rating, ratingTable, affix)
+		convertStat(flaskIncCharges, flaskIncCharges, affix)
 	}
 	if (affix == 36) {
 		Global flaskEffDuration
 		flaskEffDuration := getAff("% increased Flask Effect Duration")
-		convertStat(flaskEffDuration, flaskEffDuration, rating, ratingTable, affix)
+		convertStat(flaskEffDuration, flaskEffDuration, affix)
 	}
 	if (affix == 37) {
 		Global incRarity
 		incRarity := getAff("% increased Rarity of Items found")
-		convertStat(incRarity, numberToCheck, rating, ratingTable, affix)
+		convertStat(incRarity, numberToCheck, affix)
 	}
 	if (affix == 38) {
 		Global manaReg
 		manaReg := getAff("% increased Mana Regeneration Rate")
-		convertStat(manaReg, numberToCheck, rating, ratingTable, affix)
+		convertStat(manaReg, numberToCheck, affix)
 	}
 	if (affix == 39) {
 		Global totalAttributes
-		tempDEX := getAff(" to Dexterity")
-		tempSTR := getAff(" to Strength")
-		tempINT := getAff(" to Intelligence")
+		tempDEX := getAff(" to Dexterity(?! and)")
+		tempSTR := getAff(" to Strength(?! and)")
+		tempINT := getAff(" to Intelligence(?! and)")
+
+		dAndI := getAff(" to Dexterity and Intelligence") * 2
+		sAndI := getAff(" to Strength and Intelligence") * 2
+		sAndD := getAff(" to Strength and Dexterity") * 2
+
 		totalAttributes := getAff(" to all Attributes")*3
 
-		totalAttributes += (tempDEX + tempSTR + tempINT)
-		convertStat(totalAttributes, numberToCheck, rating, ratingTable, affix)
+		totalAttributes += (tempDEX + tempSTR + tempINT + dAndI + sAndI + sAndD)
+		convertStat(totalAttributes, numberToCheck, affix)
 	}
 	if (affix == 40) {
 		Global elementalDmg
 		elementalDmg := getAff("% increased Elemental Damage with Attack Skills")
-		convertStat(elementalDmg, numberToCheck, rating, ratingTable, affix)
+		convertStat(elementalDmg, numberToCheck, affix)
 	}
 }
 
-ratingCounter(itemType, stats, gripType:="1H"){
+ratingCounter(itemType, gripType:="1H"){
+	Global stats
 	;used as a result itself
-	rating = 0
+	Global rating = 0
 	;used for tooltip strings
-	ratingTable := []
+	Global ratingTable := []
 	Loop, 40
 	{
 		ratingTable[A_Index] := 0
@@ -707,216 +799,225 @@ ratingCounter(itemType, stats, gripType:="1H"){
 	if (itemType[1] == "Armour") {
 		;if body armour - check for body armor suffs
 		if (itemType[2] == "BodyArmour") {
-			;life 75+ on armor/evasion base
-			affShort(2, 75, rating, ratingTable, stats)
-			
-			;Energy shield 575+
-			affShort(3, 575, rating, ratingTable, stats)
-			
-			;if energy shield base or hybrid
-			;life 70+
-			affShort(4, 70, rating, ratingTable, stats)
-			;Energy shield 350+
-			affShort(5, 350, rating, ratingTable, stats)
-			
 			;if armour base
-			if (armorBase(stats, "Armour")){
+			if (armorBase("Armour")){
 				;str 40+
-				affShort(6, 40, rating, ratingTable, stats)
+				affShort(6, 40)
+			}
+			;if armour or evasion base
+			if (armorBase("Armour") or armorBase("Evasion")){
+				;life 75+
+				affShort(2, 75)
 			}
 			
 			;if energy base
-			if (armorBase(stats, "Energy")){
+			if (armorBase("Energy")){
 				;int 40+
-				affShort(7, 40, rating, ratingTable, stats)
+				affShort(7, 40)
+				;Energy shield 575+
+				affShort(3, 575)
+			}
+
+			;if energy base or hybrid
+			if (armorBase("Energy", 1)){
+				;hybrid life 70+
+				affShort(4, 70)
+				;hybrid energy shield 350+
+				affShort(5, 350)
 			}
 
 			;total elemental resistance 80+
-			affShort(8, 80, rating, ratingTable, stats)
+			affShort(8, 80)
 		}
 		
 		if (itemType[2] == "Helmet") {
 			;life 65+ on armor/evasion base
-			affShort(2, 65, rating, ratingTable, stats)
+			affShort(2, 65)
 
 			;Energy shield 350+
-			affShort(3, 350, rating, ratingTable, stats)
+			affShort(3, 350)
 
 			;if energy shield base or hybrid
 			;life 65+
-			affShort(4, 65, rating, ratingTable, stats)
+			affShort(4, 65)
 			;Energy shield 200+
-			affShort(5, 200, rating, ratingTable, stats)
+			affShort(5, 200)
 
 			;accuracy 300+
-			affShort(9, 300, rating, ratingTable, stats)
+			affShort(9, 300)
 
 			;if armor or evasion base
-			if (!armorBase(stats, "Energy", 1) and !armorBase(stats, "Energy")){
+			if (!armorBase("Energy", 1) and !armorBase("Energy")){
 				;int 40
-				affShort(7, 40, rating, ratingTable, stats)
+				affShort(7, 40)
 			}
 
 			;total resistance 80
-			affShort(8, 80, rating, ratingTable, stats)
+			affShort(8, 80)
+
+			;avoid elemental ailments
+			affShort(14, 25)
 		}
 
 		if (itemType[2] == "Boots") {
 			;movement speed 30+
-			affShort(10, 30, rating, ratingTable, stats)
+			affShort(10, 30)
 
 			;life 65+ on armor/evasion base
-			affShort(2, 65, rating, ratingTable, stats)
+			affShort(2, 65)
 
 			;Energy shield 130+
-			affShort(3, 130, rating, ratingTable, stats)
+			affShort(3, 130)
 
 			;if energy shield base or hybrid
 			;65+ life
-			affShort(4, 65, rating, ratingTable, stats)
+			affShort(4, 65)
 			;90+ es
-			affShort(5, 90, rating, ratingTable, stats)
+			affShort(5, 90)
 
 			;str 40+
-			affShort(6, 40, rating, ratingTable, stats)
+			affShort(6, 40)
 			
 			;int 40+
-			affShort(7, 40, rating, ratingTable, stats)
+			affShort(7, 40)
 
 			;total resistance 70
-			affShort(8, 70, rating, ratingTable, stats)
+			affShort(8, 70)
 		}
 
 		if (itemType[2] == "Gloves") {
 			;life 65+ on armor/evasion base
-			affShort(2, 65, rating, ratingTable, stats)
+			affShort(2, 65)
 
 			;Energy shield 150+
-			affShort(3, 150, rating, ratingTable, stats)
+			affShort(3, 150)
 
 			;if energy shield base or hybrid
 			;65+ life
-			affShort(4, 65, rating, ratingTable, stats)
+			affShort(4, 65)
 			;100+ es
-			affShort(5, 100, rating, ratingTable, stats)
+			affShort(5, 100)
 
 			;total resistance
-			affShort(8, 80, rating, ratingTable, stats)
+			affShort(8, 80)
 
 			;accuracy 300+
-			affShort(9, 300, rating, ratingTable, stats)
+			affShort(9, 300)
 
 			;attack speed 10+
-			affShort(11, 10, rating, ratingTable, stats)
+			affShort(11, 10)
 
 			;if armour or energy shield base
-			if (!armorBase(stats, "Evasion") and !armorBase(stats, "Evasion", 1)){
+			if (!armorBase("Evasion") and !armorBase("Evasion", 1)){
 				;40+ dex
-				affShort(12, 40, rating, ratingTable, stats)
+				affShort(12, 40)
 			}
+
+			;avoid elemental ailments
+			affShort(14, 25)
 		}
 
 		if (itemType[2] == "Shield") {
 			;80+ life if armour or evasion abse
-			affShort(2, 80, rating, ratingTable, stats)
+			affShort(2, 80)
 
 			;Energy shield 350+
-			affShort(3, 350, rating, ratingTable, stats)
+			affShort(3, 350)
 			
 			;if energy shield base or hybrid
 			;80+ life
-			affShort(4, 80, rating, ratingTable, stats)
+			affShort(4, 80)
 			;280+ es
-			affShort(5, 280, rating, ratingTable, stats)
+			affShort(5, 280)
 
 			;total resistance
-			affShort(8, 100, rating, ratingTable, stats)
+			affShort(8, 100)
 
 			;if armour base
-			if (armorBase(stats, "Armour")){
+			if (armorBase("Armour")){
 				;str 35+
-				affShort(6, 35, rating, ratingTable, stats)
+				affShort(6, 35)
 			}
 			
 			;if energy base
-			if (armorBase(stats, "Energy")){
+			if (armorBase("Energy")){
 				;int 35+
-				affShort(7, 35, rating, ratingTable, stats)
+				affShort(7, 35)
 			}
 
 			;55+ spell damage
-			affShort(13, 55, rating, ratingTable, stats)
+			affShort(13, 55)
 
 			;80+ spell crit chance
-			affShort(23, 80, rating, ratingTable, stats)
+			affShort(23, 80)
 		}
 
 		if (itemType[2] == "Quiver"){
 			;75+ life
-			affShort(2, 75, rating, ratingTable, stats)
+			affShort(2, 75)
 			;30 elemental spell damage
-			affShort(22, 30, rating, ratingTable, stats)
+			affShort(22, 30)
 			;30 crit strike multi
-			affShort(18, 30, rating, ratingTable, stats)
+			affShort(18, 30)
 			;30 crit strike chance
-			affShort(17, 30, rating, ratingTable, stats)
+			affShort(17, 30)
 			;70 total res
-			affShort(8, 70, rating, ratingTable, stats)
+			affShort(8, 70)
 		}
 	}
 
 	if (itemType[1] == "Weapon") {
 		if ((itemType[2] == "Sword") or (itemType[2] == "Axe") or (itemType[2] == "Mace") or (itemType[2] == "Claw") or (itemType[2] == "Bow")) {
 			;phys increased 170+
-			affShort(15, 170, rating, ratingTable, stats)
+			affShort(15, 170)
 
 			if (gripType == "2H"){
 				;xx to xx flat phys
-				affShort(16, 50, rating, ratingTable, stats)
+				affShort(16, 50)
 				;elemental damage 2h
-				affShort(21, 100*2, rating, ratingTable, stats)
+				affShort(21, 100*2)
 				;elemental damage with attacks
-				affShort(40, 87, rating, ratingTable, stats)
+				affShort(40, 87)
 			} else {
 				;1H weapon
 				;xx to xx flat phys
-				affShort(16, 33, rating, ratingTable, stats)
+				affShort(16, 33)
 				;elemental damage 1h
-				affShort(20, 70*2, rating, ratingTable, stats)
+				affShort(20, 70*2)
 				;elemental damage with attacks
-				affShort(40, 51, rating, ratingTable, stats)
+				affShort(40, 51)
 			}
 
 			;attack speed 20+
-			affShort(11, 20, rating, ratingTable, stats)
+			affShort(11, 20)
 			
 			if (itemType[2] == "Bow") {
 				;weapon crit chance 30+
-				affShort(17, 30, rating, ratingTable, stats)
+				affShort(17, 30)
 				;crit multi 30+
-				affShort(18, 30, rating, ratingTable, stats)
+				affShort(18, 30)
 				;+2 socketed bow gems
-				affShort(19, 2, rating, ratingTable, stats)
+				affShort(19, 2)
 			}
 		}
 
 		if ((itemType[2] == "Dagger") or (itemType[2] == "Wand") or (itemType[2] == "Sceptre")) {
 			;Caster
 			;elemental spell damage 90+
-			affShort(22, 90, rating, ratingTable, stats)
+			affShort(22, 90)
 			;130+ critical strike chance for spells
-			affShort(23, 130, rating, ratingTable, stats)
+			affShort(23, 130)
 			;flat elemental damage to spells
-			affShort(24, 50, rating, ratingTable, stats)
+			affShort(24, 50)
 			;crit multi 30+
-			affShort(18, 30, rating, ratingTable, stats)
+			affShort(18, 30)
 
 			;Attack dagger or wand
 			if ((itemType == "Dagger") or (itemType == "Wand")) {
 				;phys increased 170+
-				affShort(15, 170, rating, ratingTable, stats)
+				affShort(15, 170)
 				;xx to xx flat phys
-				affShort(16, 33, rating, ratingTable, stats)
+				affShort(16, 33)
 
 				;attack speed 20+
 				if (itemType == "Dagger") {
@@ -924,123 +1025,123 @@ ratingCounter(itemType, stats, gripType:="1H"){
 				} else {
 					dorw := 10
 				}
-				affShort(11, dorw, rating, ratingTable, stats)
+				affShort(11, dorw)
 
 				;weapon crit chance 30+
-				affShort(17, 30, rating, ratingTable, stats)
+				affShort(17, 30)
 				;crit multi 30+
-				affShort(18, 30, rating, ratingTable, stats)
+				affShort(18, 30)
 
 				;elemental damage 1h
-				affShort(20, 70, rating, ratingTable, stats)
+				affShort(20, 70)
 			}
 		}
 		
 		if ((itemType[2] == "Stave") or (itemType[2] == "Warstave")){
 			;+1 to socketed gems AND +2 to socketed elem gems
-			affShort(26, 3, rating, ratingTable, stats)
+			affShort(26, 3)
 
 			;elemental damage 2h, but counting as 1h 
 			;TODO: flat elem damage on staffs are individual compared to method in affShort,
 			;now it is not precise enough also because of lightning damage
 			;(it is higher than in the other weapon types)
 			;because of that we count it as 1h weapon
-			affShort(20, 70, rating, ratingTable, stats)
+			affShort(20, 70)
 
 			;elemental spell damage 160+
-			affShort(22, 160, rating, ratingTable, stats)
+			affShort(22, 160)
 		}
 	}
 	
 	if (itemType[1] == "Jewel") {
 		if (itemType[2] == "Abyss Jewel"){
 			;TODO add mods
-			affShort(2, 36, rating, ratingTable, stats)
+			affShort(2, 36)
 		}
 		if (itemType[2] == "Jewel"){
 			;% Life, 6 is middle value of all possible
-			affShort(27, 6, rating, ratingTable, stats)
+			affShort(27, 6)
 			;% ES
-			affShort(28, 6, rating, ratingTable, stats)
+			affShort(28, 6)
 			;% Cast speed
-			affShort(29, 3, rating, ratingTable, stats)
+			affShort(29, 3)
 			;% crit multi
-			affShort(18, 10.5, rating, ratingTable, stats)
+			affShort(18, 10.5)
 			;number of aspd compatible rolls
-			affShort(30, 2, rating, ratingTable, stats)
+			affShort(30, 2)
 			;% damage compatible rolls
-			affShort(31, 2, rating, ratingTable, stats)
+			affShort(31, 2)
 		}
 	}
 
 	if (itemType[1] == "Accessory") {
 		if (itemType[2] == "Belt"){
-			;70+ life if armour or evasion abse
-			affShort(2, 70, rating, ratingTable, stats)
+			;70+ life
+			affShort(2, 70)
 			;35 STR
-			affShort(6, 35, rating, ratingTable, stats)
+			affShort(6, 35)
 			;280 armour
-			affShort(32, 280, rating, ratingTable, stats)
+			affShort(32, 280)
 			;45 energy shield
-			affShort(33, 45, rating, ratingTable, stats)
+			affShort(33, 45)
 			;70 total res
-			affShort(8, 70, rating, ratingTable, stats)
+			affShort(8, 70)
 			;30 elemental damage
-			affShort(22, 30, rating, ratingTable, stats)
+			affShort(22, 30)
 			;Reduced flask charges used
-			affShort(34, 1, rating, ratingTable, stats)
+			affShort(34, 1)
 			;Increased flask charges gained
-			affShort(35, 1, rating, ratingTable, stats)
+			affShort(35, 1)
 			;Flask effect duration
-			affShort(36, 1, rating, ratingTable, stats)
+			affShort(36, 1)
 		}
 
 		if (itemType[2] == "Ring"){
 			;55+ life if armour or evasion abse
-			affShort(2, 55, rating, ratingTable, stats)
+			affShort(2, 55)
 			;50 energy shield
-			affShort(33, 50, rating, ratingTable, stats)
+			affShort(33, 50)
 			;xx-11 flat phys to attacks
-			affShort(16, 11, rating, ratingTable, stats)
+			affShort(16, 11)
 			;30 elemental damage
-			affShort(22, 30, rating, ratingTable, stats)
+			affShort(22, 30)
 			;40 increased rarity
-			affShort(37, 40, rating, ratingTable, stats)
+			affShort(37, 40)
 			;80 total res
-			affShort(8, 80, rating, ratingTable, stats)
+			affShort(8, 80)
 			;50+ mana regen
-			affShort(38, 50, rating, ratingTable, stats)
+			affShort(38, 50)
 			;250+ accuracy
-			affShort(9, 250, rating, ratingTable, stats)
+			affShort(9, 250)
 			;75+ total attributes
-			affShort(39, 75, rating, ratingTable, stats)
+			affShort(39, 75)
 		}
 
 		if (itemType[2] == "Amulet"){
 			;55+ life
-			affShort(2, 55, rating, ratingTable, stats)
+			affShort(2, 55)
 			;xx-11 flat phys to attacks
-			affShort(16, 11, rating, ratingTable, stats)
+			affShort(16, 11)
 			;40 elemental damage
-			affShort(40, 30, rating, ratingTable, stats)
+			affShort(40, 30)
 			;40 increased rarity
-			affShort(37, 40, rating, ratingTable, stats)
+			affShort(37, 40)
 			;90 total res
-			affShort(8, 90, rating, ratingTable, stats)
+			affShort(8, 90)
 			;65+ mana regen
-			affShort(38, 65, rating, ratingTable, stats)
+			affShort(38, 65)
 			;250+ accuracy
-			affShort(9, 250, rating, ratingTable, stats)
+			affShort(9, 250)
 			;70+ total attributes
-			affShort(39, 70, rating, ratingTable, stats)
+			affShort(39, 70)
 			;30 crit strike multi
-			affShort(18, 30, rating, ratingTable, stats)
+			affShort(18, 30)
 			;30 crit strike chance
-			affShort(17, 30, rating, ratingTable, stats)
+			affShort(17, 30)
 			;30 elemental spell damage
-			affShort(22, 30, rating, ratingTable, stats)
+			affShort(22, 30)
 			;15 +% energy shield
-			affShort(28, 15, rating, ratingTable, stats)
+			affShort(28, 15)
 		}
 	}
 	
@@ -1058,7 +1159,7 @@ ratingCounter(itemType, stats, gripType:="1H"){
 
 ;get desired affix value from item
 getAff(affText){
-	needle := "\d+(?=" affText ")"
+	needle := "\d+(?=(\(.+\))*" affText ")"
 	stat := 0
 	;iterate throu all matches
 	while pos := RegExMatch(item, needle, matched, A_Index=1?1: pos+StrLen(matched)) {
@@ -1068,7 +1169,8 @@ getAff(affText){
 	return %stat%
 }
 
-getArmor(stats, armourToCheck){
+getArmor(armourToCheck){
+	Global stats
 	if InStr(stats, armourToCheck){
 		needle := "(?<=" armourToCheck ": )\d+"
 		RegExMatch(stats, needle, stat)
