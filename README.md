@@ -28,10 +28,10 @@ For now ezValue require you to have AutoHotkey to be able to run https://www.aut
 - Make representaion of ezValue information more distinct, maybe by adding colors to tooltip like in popular MMOs (common, uncommon, rare, epic legenady) according to item total value
 - (?) Add an option for user to individually set weights of affixes or choose weight profile, so for example when starting a new character with physical build, affixes with elemental damage wont have any weight
 
-- Add affix counter - if there is an open affix, mention in in tooltip with recommendation to add craft, and give some rating to possible crafts
+- *DONE* Add affix counter - if there is an open affix, mention in in tooltip with recommendation to add craft, and give some rating to possible crafts
 - Add quality counter - if item is not corrupted, quality of item is not at least 20% then recommend to increase its quality
 
 - (?) Add map affix warning - there is an interesting feature in ItemInfo that could warn you about bad map mods, that could be helpful for initial map check and to check it after corruption if there is mods that you character is afraid of. I'm still not sure if I should add same feature here
 
-- Rebalance values - as of now that reddit post is 4 years old, there is probably some improvements could be used
+- *In progress* Rebalance values - as of now that reddit post is 4 years old, there is probably some improvements could be used
 - Add more usable affixes - there is good affixes like the Conquerors ones that is guaranteed good, but not mentioned in the post, probably there is even more standart affixes that should be added
