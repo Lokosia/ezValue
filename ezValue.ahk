@@ -56,86 +56,89 @@ OnClipboardChange:
 		*/
 
 		;item name
+		
 		splitted := StrSplit(namePlate, "`n")
 		;at item rarity > normal item name becomes 2 line name, at normal rarity it is 1 line, so we have to correctly find name
 		if (splitted.MaxIndex() == 4){
-			itemName := splitted[3]splitted[4]
+			itemName := splitted[3] " " splitted[4]
 		} else {
 			itemName := splitted[3]
 		}
 
 		parsedItem := parseItemType(namePlate)
-
+		
 		;exit script on unsupported item
-		if ((parsedItem[1] != "Weapon") and (parsedItem[1] != "Armour") and (parsedItem[1] != "Accessory") and (parsedItem[1] != "Currency") and (parsedItem[1] != "Jewel")) {
+		if ((parsedItem[1] != "Weapon") and (parsedItem[1] != "Armour") and (parsedItem[1] != "Accessory") and (parsedItem[1] != "Flask") and (parsedItem[1] != "Currency") and (parsedItem[1] != "Jewel")) {
+			;MsgBox, Banned
 			return
 		}
 		
 		rating := ratingCounter(parsedItem, parsedItem[3])
 		totalRating := rating[1]
-
 		descriptionRating := rating[2]
+		
+		
 		;beauty whole array
-		Loop % ObjLength(descriptionArray)
+		Loop % ObjLength(descriptionRating)
 		{
 			descriptionRating[A_Index] := beautyNumber(descriptionRating[A_Index])
 		}
 
 		descriptionArray := []
 		
-		descriptionArray[1]  := "-"descriptionRating[1]"% for CORRUPTED - can't craft on it`nchanging sockets and links only with Vaal orb on crafting bench`n"
+		descriptionArray[1]  := " -"descriptionRating[1]"%`tCORRUPTED`n"
 		;life
-		descriptionArray[2]  := "+"descriptionRating[2]" for " life1 " Life`n"
-		descriptionArray[4]  := "+"descriptionRating[4]" for " life2 " Life on Energy/Energy hybrid base`n"
-		descriptionArray[27] := "+"descriptionRating[27]" for " life3 "% Life`n"
+		descriptionArray[2]  := "+"descriptionRating[2]	"`t" life1 				" Life`n"
+		descriptionArray[4]  := "+"descriptionRating[4]	"`t" life2 				" Life on ES base`n" ;on ES/ES hybrid base
+		descriptionArray[27] := "+"descriptionRating[27]"`t" life3 				"% Life`n"
 		;es
-		descriptionArray[3]  := "+"descriptionRating[3]" for " es1 " Total Energy Shield`n"
-		descriptionArray[5]  := "+"descriptionRating[5]" for " es2 " ES on Energy/Energy hybrid base`n"
-		descriptionArray[28] := "+"descriptionRating[28]" for " es3 "% Energy Shield`n"
-		descriptionArray[33] := "+"descriptionRating[33]" for " es4 " to maximum Energy Shield`n"
+		descriptionArray[3]  := "+"descriptionRating[3]	"`t" es1 				" total ES`n"
+		descriptionArray[5]  := "+"descriptionRating[5]	"`t" es2 				" ES on ES base`n" ;on ES/ES hybrid base
+		descriptionArray[28] := "+"descriptionRating[28]"`t" es3 				"% ES`n"
+		descriptionArray[33] := "+"descriptionRating[33]"`t" es4 				" maximum ES`n"
 		;attributes
-		descriptionArray[6]  := "+"descriptionRating[6]" for " STR " STR`n"
-		descriptionArray[7]  := "+"descriptionRating[7]" for " INT " INT`n"
-		descriptionArray[12] := "+"descriptionRating[12]" for " DEX " DEX`n"
-		descriptionArray[39] := "+"descriptionRating[39]" for " totalAttributes " to Total Attributes`n"
+		descriptionArray[6]  := "+"descriptionRating[6]	"`t" STR 				" STR`n"
+		descriptionArray[7]  := "+"descriptionRating[7]	"`t" INT 				" INT`n"
+		descriptionArray[12] := "+"descriptionRating[12]"`t" DEX 				" DEX`n"
+		descriptionArray[39] := "+"descriptionRating[39]"`t" totalAttributes 	" Attributes`n"
 		;resistance
-		descriptionArray[8]  := "+"descriptionRating[8]" for " totalResistance "% Total Resistance`n"
+		descriptionArray[8]  := "+"descriptionRating[8]	"`t" totalResistance 	"% Res`n"
 		;elemental damage
-		descriptionArray[20] := "+"descriptionRating[20]" for " elementalFlat1H " Elemental Damage on 1H weapon`n"
-		descriptionArray[21] := "+"descriptionRating[21]" for " elementalFlat2H " Elemental Damage on 2H weapon`n"
-		descriptionArray[22] := "+"descriptionRating[22]" for " elementalSpellDMG " Elemental Spell Damage`n"
-		descriptionArray[24] := "+"descriptionRating[24]" for " elementalFlatSpells " Elemental Damage to Spells`n"
-		descriptionArray[40] := "+"descriptionRating[40]" for " elementalDmg " increased Elemental Damage with Attack Skills`n"
+		descriptionArray[20] := "+"descriptionRating[20]"`t" elementalFlat1H 	" 1H Elem DMG`n"
+		descriptionArray[21] := "+"descriptionRating[21]"`t" elementalFlat2H 	" 2H Elem DMG`n"
+		descriptionArray[22] := "+"descriptionRating[22]"`t" elementalSpellDMG 	" Elem Spell DMG`n"
+		descriptionArray[24] := "+"descriptionRating[24]"`t" elementalFlatSpells " Elem DMG to Spells`n"
+		descriptionArray[40] := "+"descriptionRating[40]"`t" elementalDmg 		" Elem DMG with ATK Skills`n"
 		;spell damage
-		descriptionArray[13] := "+"descriptionRating[13]" for " spellDMG " Spell Damage`n"
+		descriptionArray[13] := "+"descriptionRating[13]"`t" spellDMG 			" Spell DMG`n"
 		;phys damage
-		descriptionArray[15] := "+"descriptionRating[15]" for " physInc "% increased Physical Damage`n"
-		descriptionArray[16] := "+"descriptionRating[16]" for " physFlat " flat Physical Damage`n"
+		descriptionArray[15] := "+"descriptionRating[15]"`t" physInc 			"% Phys DMG`n"
+		descriptionArray[16] := "+"descriptionRating[16]"`t" physFlat 			" flat Phys DMG`n"
 		;crits
-		descriptionArray[18] := "+"descriptionRating[18]" for " globalCritMulti " to Global Critical Strike Multiplier`n"
-		descriptionArray[23] := "+"descriptionRating[23]" for " spellCritChance " total Critical Strike Chance for Spells`n"
-		descriptionArray[17] := "+"descriptionRating[17]" for " weaponCritChance " increased Critical Strike Chance`n"
+		descriptionArray[18] := "+"descriptionRating[18]"`t" globalCritMulti 	" Global Crit Multi`n"
+		descriptionArray[23] := "+"descriptionRating[23]"`t" spellCritChance 	" Crit Chance for Spells`n"
+		descriptionArray[17] := "+"descriptionRating[17]"`t" weaponCritChance 	" Crit Chance`n"
 		;speed
-		descriptionArray[10] := "+"descriptionRating[10]" for " ms "% Movement Speed`n"
-		descriptionArray[11] := "+"descriptionRating[11]" for " aspd "% Attack Speed`n"
-		descriptionArray[29] := "+"descriptionRating[29]" for " castSpeed "% Cast Speed`n"
+		descriptionArray[10] := "+"descriptionRating[10]"`t" ms 				"% MOV SPD`n"
+		descriptionArray[11] := "+"descriptionRating[11]"`t" aspd 				"% ATK SPD`n"
+		descriptionArray[29] := "+"descriptionRating[29]"`t" castSpeed 			"% Cast SPD`n"
 		;sockets
-		descriptionArray[19] := "+"descriptionRating[19]" for " socketedBowGems " to Socketed Bow Gems`n"
-		descriptionArray[25] := "+"descriptionRating[25]" for " socketedGems " to Socketed Gems`n"
-		descriptionArray[26] := "+"descriptionRating[26]" for " socketedElemGems " to Socketed Elemental Gems`n"
+		descriptionArray[19] := "+"descriptionRating[19]"`t" socketedBowGems 	" Socketed Bow Gems`n"
+		descriptionArray[25] := "+"descriptionRating[25]"`t" socketedGems 		" Socketed Gems`n"
+		descriptionArray[26] := "+"descriptionRating[26]"`t" socketedElemGems 	" Socketed Elem Gems`n"
 		;jewel rolls
-		descriptionArray[30] := "+"descriptionRating[30]" for " aspdRolls " Attack Speed rolls`n"
-		descriptionArray[31] := "+"descriptionRating[31]" for " damageRolls " Damage rolls`n"
+		descriptionArray[30] := "+"descriptionRating[30]"`t" aspdRolls 			" ATK SPD rolls`n"
+		descriptionArray[31] := "+"descriptionRating[31]"`t" damageRolls 		" DMG rolls`n"
 		;flasks
-		descriptionArray[34] := "+"descriptionRating[34]" for " flaskRedCharges "% reduced Flask Charges used`n"
-		descriptionArray[35] := "+"descriptionRating[35]" for " flaskIncCharges "% increased Flask Charges gained`n"
-		descriptionArray[36] := "+"descriptionRating[36]" for " flaskEffDuration "% increased Flask Effect Duration`n"
+		descriptionArray[34] := "+"descriptionRating[34]"`t" flaskRedCharges 	"% reduced Flask Charges used`n"
+		descriptionArray[35] := "+"descriptionRating[35]"`t" flaskIncCharges 	"% Flask Charges gained`n"
+		descriptionArray[36] := "+"descriptionRating[36]"`t" flaskEffDuration 	"% Flask Effect Duration`n"
 		;misc
-		descriptionArray[32] := "+"descriptionRating[32]" for " armour " to Armour`n"
-		descriptionArray[9]  := "+"descriptionRating[9]" for " accuracy " Accuracy`n"
-		descriptionArray[37] := "+"descriptionRating[37]" for " incRarity "% increased Rarity of Items found`n"
-		descriptionArray[38] := "+"descriptionRating[38]" for " manaReg "% increased Mana Regeneration Rate`n"
-		descriptionArray[14] := "+"descriptionRating[14]" for " avoidElemAil "% chance to Avoid Elemental Ailments`n"
+		descriptionArray[32] := "+"descriptionRating[32]"`t" armour 			" Armour`n"
+		descriptionArray[9]  := "+"descriptionRating[9]	"`t" accuracy 			" Accuracy`n"
+		descriptionArray[37] := "+"descriptionRating[37]"`t" incRarity 			"% Rarity`n"
+		descriptionArray[38] := "+"descriptionRating[38]"`t" manaReg 			"% Mana Regen`n"
+		descriptionArray[14] := "+"descriptionRating[14]"`t" avoidElemAil 		"% to Avoid Elem Ailments`n"
 		
 		;form description
 		description := "`n"
@@ -178,18 +181,18 @@ OnClipboardChange:
 		
 		;Open suff and open preff
 		if (prefixNumber < affLimit and prefixNumber != 0 and suffixNumber < affLimit and suffixNumber != 0){
-			description := description "`nOpen Suffix and Prefix, craft and augment it "
+			description := description "`nOpen Suffix and Prefix, aug me! "
 		} else if (prefixNumber < affLimit and prefixNumber != 0){
 			if(craftAllowed){
 				description := description "`nPrefix craft possible "
 			}else{
-				description := description "`nPrefix augment possible "
+				description := description "`nPrefix aug me! "
 			}
 		} else if (suffixNumber < affLimit and suffixNumber != 0){
 			if(craftAllowed){
 				description := description "`nSuffix craft possible "
 			}else{
-				description := description "`nSuffix augment possible "
+				description := description "`nSuffix aug me! "
 			}
 		} else if (prefixNumber == affLimit and suffixNumber == affLimit){
 			description := description "`nNo room for affixes "
@@ -199,23 +202,30 @@ OnClipboardChange:
 		
 		;form verdict
 		if (parsedItem[1] == "Currency"){
-			verdict := "It's currency, all currency is usable"
+			verdict := "All currency is usable"
 		} else if (totalRating < 2){
-			verdict := "Bad item, vend to NPC or reroll"
+			verdict := "Bad, vend to NPC or reroll"
 		} else {
-			verdict := "Good item, use it"
+			verdict := "Good, use it"
 		}
 		
 		;form tooltip
+		;Item name
 		finalString := itemName
+		;Description of rating evaluation
 		if (description != ""){
 			finalString := finalString "`n" description
 		}
+		
+		RegExMatch(item, "(?<=Item Level: )\d+", item_level)
+		;Item lvl rating
+		finalString := finalString "`n" item_level "/84`tItem level" 
+		
+		;Rating
+		finalString := finalString "`n" beautyNumber(totalRating) "`tRating" 
 
-		finalString := finalString "`n`nRating:`t" beautyNumber(totalRating)
-
-		if (InStr(stats, "Stack Size")){
-			RegExMatch(stats, "\d+", stackSize)
+		if (InStr(item, "Stack Size: ")){
+			RegExMatch(item, "\d+", stackSize)
 			
 			;format beautiful sumRating
 			sumRating := (totalRating * stackSize)
@@ -223,15 +233,36 @@ OnClipboardChange:
 
 			finalString := finalString "`n" sumRating
 		}
-
-		finalString := finalString "`nResult:`t" verdict
+		;Verdict in words
+		;finalString := finalString "`nResult:`t" verdict
 		
-		;show tooltip
+		
+		;get mouse coords
 		MouseGetPos, xpos, ypos
+		;preparation vars
+		tooltip_arrayed := StrSplit(finalString, "`n")
+		tooltip_height := (tooltip_arrayed.MaxIndex()*14)+200
+		;finding the longest string
+		longest_string := 0
+		new_final := ""
+		for index, element in tooltip_arrayed {
+			;add spaces to the start and the end of lines
+			element := " " element " `n"
+			new_final := new_final element
+			length := StrLen(element)
+			if(length > longest_string){
+				longest_string := length
+			}
+		}
+		finalString := new_final
+		tooltip_width := (longest_string*11)
+		;MsgBox % longest_string
 		;coord limiter
-		xpos := xpos + 36 > A_ScreenWidth ? A_ScreenWidth - 36: xpos + 36
-		ypos := ypos + 36 > A_ScreenHeight ? A_ScreenHeight - 36: ypos + 36
+		xpos := (xpos + 72 + tooltip_width) >= A_ScreenWidth ? A_ScreenWidth - 36 - tooltip_width: xpos + 36
+		ypos := ((ypos + tooltip_height) >= A_ScreenHeight) ? A_ScreenHeight - tooltip_height: ypos + 36
+		;show tooltip
 		Tooltip % finalString, xpos,ypos
+		
 		;delete tooltip in 5 sec
 		SetTimer, RemoveToolTip, -5000
 	}
@@ -352,10 +383,13 @@ affShort(affix, numberToCheck){
 		cold := getAff("% to Cold Resistance")
 		lightning := getAff("% to Lightning Resistance")
 		chaos := getAff("% to Chaos Resistance")
+
 		fchaos := getAff("% to Fire and Chaos Resistances")*2
 		cchaos := getAff("% to Cold and Chaos Resistances")*2
 		lchaos := getAff("% to Lightning and Chaos Resistances")*2
+
 		allElements := getAff("% to all Elemental Resistances")*3
+		
 		fireAndCold := getAff("% to Fire and Cold Resistances")*2
 		coldAndLightning := getAff("% to Cold and Lightning Resistances")*2
 		fireAndLightning := getAff("% to Fire and Lightning Resistances")*2
@@ -479,7 +513,7 @@ affShort(affix, numberToCheck){
 		spellLightning := getAff("% increased Lightning Damage")
 		
 		spellGlobal := getAff("% increased Spell Damage")
-		spellElementalGlobal := getAff("% increased Elemental Damage")
+		spellElementalGlobal := getAff("% increased Elemental Damage(?!.)")
 
 		elementalSpellDMG := (spellFire + spellCold + spellLightning + spellGlobal + spellElementalGlobal)
 		convertStat(elementalSpellDMG, numberToCheck, affix)
@@ -609,6 +643,7 @@ affShort(affix, numberToCheck){
 }
 
 ratingCounter(itemType, gripType:="1H"){
+	
 	Global stats
 	;used as a result itself
 	Global rating = 0
@@ -1214,9 +1249,9 @@ parseItemType(namePlate)
 	}
 	
 	;get the first line with the item class
-	RegExMatch(namePlate, "^(.*)", firstLine)
+	RegExMatch(namePlate, "(?<=Item Class: ).*", item_class)
 	
-	If (RegExMatch(firstLine, "i)\b((One Hand|Two Hand) (Axes|Swords|Maces)|Sceptres|Staves|Warstaves|Daggers|Claws|Bows|Wands)\b", match))
+	If (RegExMatch(item_class, "i)\b((One Hand|Two Hand) (Axes|Swords|Maces)|Sceptres|Staves|Warstaves|Daggers|Claws|Bows|Wands)\b", match))
 		{
 			baseType	:= "Weapon"
 			If (RegExMatch(match1, "i)(Swords|Axes|Maces)", subMatch)) {
@@ -1231,52 +1266,50 @@ parseItemType(namePlate)
 			return [baseType, subType, gripType]
 		}
 
-	;get the last line with the base item name
-	RegExMatch(namePlate, "(.*)$", LoopField)
-
 	; Belts, Amulets, Rings, Quivers, Flasks
-	If (RegExMatch(LoopField, "i)\b(Belt|Stygian Vise|Rustic Sash)\b"))
+	If (RegExMatch(item_class, "i)\b(Belts|Stygian Vise|Rustic Sash)\b"))
 	{
 		baseType := "Accessory"
 		subType = Belt
 		return [baseType, subType]
 	}		
-	If (RegExMatch(LoopField, "i)\b(Amulet|Talisman)\b")) and not (RegExMatch(LoopField, "i)\bLeaguestone\b"))
+	If (RegExMatch(item_class, "i)\b(Amulets|Talismans)\b")) and not (RegExMatch(item_class, "i)\bLeaguestone\b"))
 	{
 		baseType := "Accessory"
 		subType = Amulet
 		return [baseType, subType]
 	}
-	If (RegExMatch(LoopField, "\b(Ring)\b", match))
+	If (RegExMatch(item_class, "\b(Rings)\b", match))
 	{
 		baseType := "Accessory"
-		subType := match1
+		subType := "Ring"
 		return [baseType, subType]
 	}
-	If (RegExMatch(LoopField, "\b(Quiver)\b", match))
+	If (RegExMatch(item_class, "\b(Quivers)\b", match))
 	{
 		baseType := "Armour"
-		subType := match1
+		subType := "Quiver"
 		return [baseType, subType]
 	}
-	If (RegExMatch(LoopField, "\b(Flask)\b", match))
+	If (RegExMatch(item_class, "Flasks", match))
 	{
+		
 		baseType := "Flask"
-		subType := match1
+		subType := "Flask"
 		return [baseType, subType]
 	}
 	
 	;Maps
-	If (RegExMatch(LoopField, "i)\b(Map)\b"))
+	If (RegExMatch(item_class, "i)\b(Map)\b"))
 	{
 		Global mapMatchList
 		baseType = Map
 		Loop % mapMatchList.MaxIndex()
 		{
 			mapMatch := mapMatchList[A_Index]
-			IfInString, LoopField, %mapMatch%
+			IfInString, item_class, %mapMatch%
 			{
-				If (RegExMatch(LoopField, "\bShaped " . mapMatch))
+				If (RegExMatch(item_class, "\bShaped " . mapMatch))
 				{
 					subType = Shaped %mapMatch%
 				}
@@ -1293,22 +1326,22 @@ parseItemType(namePlate)
 	}
 	
 	; Jewels
-	If (RegExMatch(LoopField, "i)(Cobalt|Crimson|Viridian|Prismatic) Jewel", match)) {
+	If (RegExMatch(item_class, "i)(Cobalt|Crimson|Viridian|Prismatic) Jewel", match)) {
 		baseType = Jewel
 		subType := "Jewel"
 		return [baseType, subType]
 	}
 	; Abyss Jewels
-	If (RegExMatch(LoopField, "i)(Murderous|Hypnotic|Searching|Ghastly) Eye Jewel", match)) {
+	If (RegExMatch(item_class, "i)(Murderous|Hypnotic|Searching|Ghastly) Eye Jewel", match)) {
 		baseType = Jewel
 		subType := "Abyss Jewel"
 		return [baseType, subType]
 	}
 	
 	; Leaguestones and Scarabs
-	If (RegExMatch(Loopfield, "i)\b(Leaguestone|Scarab)\b"))
+	If (RegExMatch(item_class, "i)\b(Leaguestone|Scarab)\b"))
 	{
-		RegexMatch(LoopField, "i)(.*)(Leaguestone|Scarab)", typeMatch)
+		RegexMatch(item_class, "i)(.*)(Leaguestone|Scarab)", typeMatch)
 		RegexMatch(Trim(typeMatch1), "i)\b(\w+)\W*$", match) ; match last word
 		baseType := Trim(typeMatch2)
 		subType := Trim(match1) " " Trim(typeMatch2)
@@ -1319,7 +1352,7 @@ parseItemType(namePlate)
 	; Matching armour types with regular expressions for compact code
 
 	; Shields
-	If (RegExMatch(LoopField, "\b(Buckler|Bundle|Shield)\b"))
+	If (RegExMatch(item_class, "\b(Buckler|Bundle|Shields)\b"))
 	{
 		baseType = Armour
 		subType = Shield
@@ -1327,7 +1360,7 @@ parseItemType(namePlate)
 	}
 
 	; Gloves
-	If (RegExMatch(LoopField, "\b(Gauntlets|Gloves|Mitts)\b"))
+	If (RegExMatch(item_class, "\b(Gauntlets|Gloves|Mitts)\b"))
 	{
 		baseType = Armour
 		subType = Gloves
@@ -1335,7 +1368,7 @@ parseItemType(namePlate)
 	}
 
 	; Boots
-	If (RegExMatch(LoopField, "\b(Boots|Greaves|Slippers|Shoes)\b"))
+	If (RegExMatch(item_class, "\b(Boots|Greaves|Slippers|Shoes)\b"))
 	{
 		baseType = Armour
 		subType = Boots
@@ -1343,7 +1376,7 @@ parseItemType(namePlate)
 	}
 
 	; Helmets
-	If (RegExMatch(LoopField, "\b(Bascinet|Burgonet|Cage|Circlet|Crown|Hood|Helm|Helmet|Mask|Sallet|Tricorne)\b"))
+	If (RegExMatch(item_class, "\b(Bascinet|Burgonet|Cage|Circlet|Crown|Hood|Helm|Helmet|Helmets|Mask|Sallet|Tricorne)\b"))
 	{
 		baseType = Armour
 		subType = Helmet
@@ -1353,7 +1386,7 @@ parseItemType(namePlate)
 	; Note: Body armours can have "Pelt" in their randomly assigned name,
 	;    explicitly matching the three pelt base items to be safe.
 
-	If (RegExMatch(LoopField, "\b(Iron Hat|Leather Cap|Rusted Coif|Wolf Pelt|Ursine Pelt|Lion Pelt)\b"))
+	If (RegExMatch(item_class, "\b(Iron Hat|Leather Cap|Rusted Coif|Wolf Pelt|Ursine Pelt|Lion Pelt)\b"))
 	{
 		baseType = Armour
 		subType = Helmet
@@ -1362,9 +1395,9 @@ parseItemType(namePlate)
 
 	; BodyArmour
 	; Note: Not using "$" means "Leather" could match "Leather Belt", therefore we first check that the item is not a belt. (belts are currently checked earlier so this is redundant, but the order might change)
-	If (!RegExMatch(LoopField, "\b(Belt)\b"))
+	If (!RegExMatch(item_class, "\b(Belt)\b"))
 	{
-		If (RegExMatch(LoopField, "\b(Armour|Brigandine|Chainmail|Coat|Doublet|Garb|Hauberk|Jacket|Lamellar|Leather|Plate|Raiment|Regalia|Ringmail|Robe|Tunic|Vest|Vestment)\b"))
+		If (RegExMatch(item_class, "\b(Body Armours|Brigandine|Chainmail|Coat|Doublet|Garb|Hauberk|Jacket|Lamellar|Leather|Plate|Raiment|Regalia|Ringmail|Robe|Tunic|Vest|Vestment)\b"))
 		{
 			baseType = Armour
 			subType = BodyArmour
@@ -1372,7 +1405,7 @@ parseItemType(namePlate)
 		}
 	}
 
-	If (RegExMatch(LoopField, "\b(Chestplate|Full Dragonscale|Full Wyrmscale|Necromancer Silks|Shabby Jerkin|Silken Wrap)\b"))
+	If (RegExMatch(item_class, "\b(Chestplate|Full Dragonscale|Full Wyrmscale|Necromancer Silks|Shabby Jerkin|Silken Wrap)\b"))
 	{
 		baseType = Armour
 		subType = BodyArmour
