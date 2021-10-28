@@ -32,12 +32,12 @@ OnClipboardChange:
 
 		;collect info and split it to vars
 		;Item class, rarity name
-		namePlate	:= tempItem[1]
+		Global namePlate	:= tempItem[1]
 		
 		;Quality, Armor/ES/Evasion
 		;we have to find actually section and save var as global to use it easily later
 		Global stats
-		if (InStr(tempItem[2], "Armour") or InStr(tempItem[2], "Energy Shield") or InStr(tempItem[2], "Evasion")){
+		if (InStr(tempItem[2], "Armour") or InStr(tempItem[2], "Energy Shield") or InStr(tempItem[2], "Evasion") or InStr(tempItem[2], "Map Tier")){
 			stats		:= tempItem[2]
 		} else {
 			stats := ""
@@ -65,10 +65,10 @@ OnClipboardChange:
 			itemName := splitted[3]
 		}
 
-		parsedItem := parseItemType(namePlate)
+		parsedItem := parseItemType()
 		
 		;exit script on unsupported item
-		if ((parsedItem[1] != "Weapon") and (parsedItem[1] != "Armour") and (parsedItem[1] != "Accessory") and (parsedItem[1] != "Flask") and (parsedItem[1] != "Currency") and (parsedItem[1] != "Jewel")) {
+		if ((parsedItem[1] != "Weapon") and (parsedItem[1] != "Armour") and (parsedItem[1] != "Accessory") and (parsedItem[1] != "Flask") and (parsedItem[1] != "Currency") and (parsedItem[1] != "Jewel") and (parsedItem[1] != "Map")) {
 			;MsgBox, Banned
 			return
 		}
@@ -139,6 +139,10 @@ OnClipboardChange:
 		descriptionArray[37] := "+"descriptionRating[37]"`t" incRarity 			"% Rarity`n"
 		descriptionArray[38] := "+"descriptionRating[38]"`t" manaReg 			"% Mana Regen`n"
 		descriptionArray[14] := "+"descriptionRating[14]"`t" avoidElemAil 		"% to Avoid Elem Ailments`n"
+		;map
+		descriptionArray[41] := "+"descriptionRating[41]"`t" mapValue 			" IIQ/IIR/IPS`n"
+		descriptionArray[42] := "+"descriptionRating[42]"`t" mapTier 			" Tier`n"
+		descriptionArray[43] := "+"descriptionRating[43]"`t" mapLayout 			" Layout`n"
 		
 		;form description
 		description := "`n"
@@ -217,9 +221,11 @@ OnClipboardChange:
 			finalString := finalString "`n" description
 		}
 		
-		RegExMatch(item, "(?<=Item Level: )\d+", item_level)
-		;Item lvl rating
-		finalString := finalString "`n" item_level "/84`tItem level" 
+		if (parsedItem[1] != "Currency"){
+			RegExMatch(item, "(?<=Item Level: )\d+", item_level)
+			;Item lvl rating
+			finalString := finalString "`n" item_level "/84`tItem level"
+		}
 		
 		;Rating
 		finalString := finalString "`n" beautyNumber(totalRating) "`tRating" 
@@ -261,7 +267,7 @@ OnClipboardChange:
 		xpos := (xpos + 72 + tooltip_width) >= A_ScreenWidth ? A_ScreenWidth - 36 - tooltip_width: xpos + 36
 		ypos := ((ypos + tooltip_height) >= A_ScreenHeight) ? A_ScreenHeight - tooltip_height: ypos + 36
 		;show tooltip
-		Tooltip % finalString, xpos,ypos
+		Tooltip % finalString, A_ScreenWidth/3,A_ScreenHeight-tooltip_height
 		
 		;delete tooltip in 5 sec
 		SetTimer, RemoveToolTip, -5000
@@ -572,7 +578,7 @@ affShort(affix, numberToCheck){
 	}
 	if (affix == 30) {
 		Global aspdRolls
-		needle := "Speed"
+		needle := "Attack Speed"
 		regexReplace(item, needle, needle, aspdRolls)
 		convertStat(aspdRolls, numberToCheck, affix)
 	}
@@ -640,6 +646,75 @@ affShort(affix, numberToCheck){
 		elementalDmg := getAff("% increased Elemental Damage with Attack Skills")
 		convertStat(elementalDmg, numberToCheck, affix)
 	}
+	if (affix == 41) {
+		Global mapValue
+
+		RegExMatch(stats, "(?<=Quantity:..)\d+", quantity)
+		RegExMatch(stats, "(?<=Rarity:..)\d+", rarity)
+		RegExMatch(stats, "(?<=Size:..)\d+", size)
+		RegExMatch(stats, "(?<=Quality:..)\d+", quality)
+
+		if (quality == ""){
+			quality = 0
+		}
+
+		if (size == ""){
+			size = 0
+		}
+
+		if (rarity == ""){
+			rarity = 0
+		}
+
+		if (quantity == ""){
+			quantity = 0
+		}
+		
+		;quantity is 108 max default from 6mod + 32 from additional 2mods in 8mod max iiQ + 20 from chisels
+		quantity := quantity / 160
+		rarity := rarity / 60
+		size := size / 39
+
+		mapValue := Round(quantity + rarity + size, 2)
+		
+		convertStat(mapValue, numberToCheck, affix)
+	}
+	if (affix == 42){
+		Global mapTier
+
+		RegExMatch(stats, "(?<=Map Tier:.)\d+", tier)
+		mapTier := tier
+
+		convertStat(mapTier, numberToCheck, affix)
+	}
+	if (affix = 43){
+		;according to https://docs.google.com/spreadsheets/d/1fIs8sdvgZG7iVouPdtFkbRx5kv55_xVja8l19yubyRU/htmlview?pru=AAABfOzoUgY*qurvgZnJyKOheDOLA8cicA#
+		Global mapLayout
+		mapName := StrSplit(namePlate, "`n")
+		if (mapName.MaxIndex() == 4){
+			mapName := mapName[4]
+			RegExMatch(mapName, ".+(?= Map)", mapName)
+		} else {
+			mapName := mapName[3]
+			RegExMatch(stats, "(?<=Quantity:..)\d+", quantity)
+			MsgBox % quantity
+			if (quantity > 0){
+				;skip 1 word
+				RegExMatch(mapName, "(?<=\w+ ).+(?= Map)", mapName)
+			} else {
+				RegExMatch(mapName, ".+(?= Map)", mapName)
+			}
+		}
+		
+		mapTotal := 0
+
+		if (mapName == "Summit"){
+			mapTotal := 3.5
+		}
+
+		MsgBox % mapName
+
+	}
 }
 
 ratingCounter(itemType, gripType:="1H"){
@@ -649,7 +724,7 @@ ratingCounter(itemType, gripType:="1H"){
 	Global rating = 0
 	;used for tooltip strings
 	Global ratingTable := []
-	Loop, 40
+	Loop, 42
 	{
 		ratingTable[A_Index] := 0
 	}
@@ -693,6 +768,9 @@ ratingCounter(itemType, gripType:="1H"){
 	;38 mana regen rate
 	;39 total attributes
 	;40 elemental damage with attack skills
+	;41 map value
+	;42 map tier
+	;43 map layout
 	;MsgBox % stats
 	if (itemType[1] == "Currency") {
 		scroll_of_wisdom := 1
@@ -1180,9 +1258,17 @@ ratingCounter(itemType, gripType:="1H"){
 		}
 	}
 	
+	if (itemType[1] == "Map") {
+		;Map Quantity + Rarity + Size
+		affShort(41, 3)
+		;Map tier
+		affShort(42, 16)
+		;Map layout
+		affShort(43, 4.6)
+	}
 
 	;if corrupted - discount rating by 10%
-	if(itemType[1] != "Currency"){
+	if (itemType[1] != "Currency") and (itemType[1] != "Map"){
 		if (RegExMatch(item, "Corrupted") != 0) {
 			rating *= 0.9
 			ratingTable[1] := 10
@@ -1219,11 +1305,12 @@ ThousandsSep(x) {
 }
 
 ;took from ItemInfo
-parseItemType(namePlate)
+parseItemType()
 {
+	Global namePlate
 	; Grip type only matters for weapons at this point. For all others it will be 'None'.
 	; Note that shields are armour and not weapons, they are not 1H.
-	GripType = None
+	gripType = None
 	baseType := ""
 	subType := ""
 	
@@ -1300,33 +1387,15 @@ parseItemType(namePlate)
 	}
 	
 	;Maps
-	If (RegExMatch(item_class, "i)\b(Map)\b"))
+	If (RegExMatch(item_class, "Map"))
 	{
-		Global mapMatchList
-		baseType = Map
-		Loop % mapMatchList.MaxIndex()
-		{
-			mapMatch := mapMatchList[A_Index]
-			IfInString, item_class, %mapMatch%
-			{
-				If (RegExMatch(item_class, "\bShaped " . mapMatch))
-				{
-					subType = Shaped %mapMatch%
-				}
-				Else
-				{
-					subType = %mapMatch%
-				}
-				return [baseType, subType]
-			}
-		}
-		
-		subType = Unknown%A_Space%Map
+		baseType := "Map"
+		subType := baseType
 		return [baseType, subType]
 	}
 	
 	; Jewels
-	If (RegExMatch(item_class, "i)(Cobalt|Crimson|Viridian|Prismatic) Jewel", match)) {
+	If (RegExMatch(item_class, "Jewels", match)) {
 		baseType = Jewel
 		subType := "Jewel"
 		return [baseType, subType]
