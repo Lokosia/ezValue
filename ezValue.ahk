@@ -74,14 +74,16 @@ OnClipboardChange:
 		}
 		
 		rating := ratingCounter(parsedItem, parsedItem[3])
+		;taking final rating
 		totalRating := rating[1]
+		;taking table with description
 		descriptionRating := rating[2]
-		
 		
 		;beauty whole array
 		Loop % ObjLength(descriptionRating)
 		{
 			descriptionRating[A_Index] := beautyNumber(descriptionRating[A_Index])
+			
 		}
 
 		descriptionArray := []
@@ -687,33 +689,248 @@ affShort(affix, numberToCheck){
 
 		convertStat(mapTier, numberToCheck, affix)
 	}
-	if (affix = 43){
+	if (affix == 43){
 		;according to https://docs.google.com/spreadsheets/d/1fIs8sdvgZG7iVouPdtFkbRx5kv55_xVja8l19yubyRU/htmlview?pru=AAABfOzoUgY*qurvgZnJyKOheDOLA8cicA#
 		Global mapLayout
 		mapName := StrSplit(namePlate, "`n")
 		if (mapName.MaxIndex() == 4){
 			mapName := mapName[4]
-			RegExMatch(mapName, ".+(?= Map)", mapName)
 		} else {
 			mapName := mapName[3]
+			;delete various map name prefixes
 			RegExMatch(stats, "(?<=Quantity:..)\d+", quantity)
-			MsgBox % quantity
 			if (quantity > 0){
 				;skip 1 word
-				RegExMatch(mapName, "(?<=\w+ ).+(?= Map)", mapName)
-			} else {
-				RegExMatch(mapName, ".+(?= Map)", mapName)
+				mapName := RegExReplace(mapName, "^\S+ ", "")
 			}
 		}
-		
-		mapTotal := 0
-
-		if (mapName == "Summit"){
-			mapTotal := 3.5
+		mapName := StrReplace(mapName, "Scourged ", "")
+		mapName := StrReplace(mapName, "Blighted ", "")
+		;Return if Maven map
+		if (InStr(mapName, "Maven") == 0){
+			RegExMatch(mapName, ".+(?= Map)", mapName)
+		}else{
+			return
 		}
-
-		MsgBox % mapName
-
+		
+		;MsgBox % mapName
+		
+		switch mapName {
+			case "Dungeon":
+				mapTotal := 2.5
+			case "Canyon":
+				mapTotal := 3.8
+			case "Dunes":
+				mapTotal := 3.2
+			case "Plaza":
+				mapTotal := 2.5
+			case "Underground River":
+				mapTotal := 3.6
+			case "Atoll":
+				mapTotal := 3.2
+			case "Bone Crypt":
+				mapTotal := 2.7
+			case "Colosseum":
+				mapTotal := 2.5
+			case "Lighthouse":
+				mapTotal := 3.4
+			case "Museum":
+				mapTotal := 2.1
+			case "Waste Pool":
+				mapTotal := 3.7
+			case "Orchard":
+				mapTotal := 2.5
+			case "Overgrown Ruin":
+				mapTotal := 2.4
+			case "Spider Forest":
+				mapTotal := 3.3
+			case "Desert":
+				mapTotal := 2.4
+			case "Maze":
+				mapTotal := 1.9
+			case "Dig":
+				mapTotal := 3.1
+			case "Moon Temple":
+				mapTotal := 3.6
+			case "Forking River":
+				mapTotal := 3.1
+			case "Ashen Wood":
+				mapTotal := 4.1
+			case "Acid Caverns":
+				mapTotal := 3.2
+			case "Lava Lake":
+				mapTotal := 0
+			case "Alleyways":
+				mapTotal := 4
+			case "Primordial Blocks":
+				mapTotal := 1.9
+			case "Sulphur Vents":
+				mapTotal := 3.3
+			case "Estuary":
+				mapTotal := 3.8
+			case "Arid Lake":
+				mapTotal := 3.9
+			case "Dry Sea":
+				mapTotal := 2.9
+			case "Strand":
+				mapTotal := 3.6
+			case "Caldera":
+				mapTotal := 3.6
+			case "Chateau":
+				mapTotal := 3.5
+			case "Core":
+				mapTotal := 0
+			case "Ghetto":
+				mapTotal := 3
+			case "Spider Lair":
+				mapTotal := 3.2
+			case "Tower":
+				mapTotal := 3.5
+			case "Cemetery":
+				mapTotal := 3.3
+			case "Flooded Mine":
+				mapTotal := 3
+			case "Lair":
+				mapTotal := 3.8
+			case "Wharf":
+				mapTotal := 3.5
+			case "Grave Trough":
+				mapTotal := 2.4
+			case "Leyline":
+				mapTotal := 3.4
+			case "Promenade":
+				mapTotal := 3.7
+			case "Overgrown Shrine":
+				mapTotal := 2.8
+			case "Crimson Township":
+				mapTotal := 2.9
+			case "Armoury":
+				mapTotal := 4.3
+			case "Sepulchre":
+				mapTotal := 2.4
+			case "Sunken City":
+				mapTotal := 2.5
+			case "Basilica":
+				mapTotal := 0
+			case "Crimson Temple":
+				mapTotal := 4.1
+			case "Summit":
+				mapTotal := 3.5
+			case "Vaal Temple":
+				mapTotal := 1.8
+			case "Haunted Mansion":
+				mapTotal := 3.2
+			case "Gardens":
+				mapTotal := 2.5
+			case "Reef":
+				mapTotal := 0.0
+			case "Waterways":
+				mapTotal := 3.1
+			case "Carcass":
+				mapTotal := 3.4
+			case "Cursed Crypt":
+				mapTotal := 2.6
+			case "Foundry":
+				mapTotal := 2.3
+			case "Port":
+				mapTotal := 3.6
+			case "Tropical Island":
+				mapTotal := 3.9
+			case "Silo":
+				mapTotal := 2.7
+			case "Vaal Pyramid":
+				mapTotal := 1.9
+			case "Necropolis":
+				mapTotal := 2.4
+			case "Siege":
+				mapTotal := 3.1
+			case "Malformation":
+				mapTotal := 3.2
+			case "Relic Chambers":
+				mapTotal := 3
+			case "Arcade":
+				mapTotal := 4.6
+			case "Palace":
+				mapTotal := 2.4
+			case "Cells":
+				mapTotal := 3.2
+			case "Lookout":
+				mapTotal := 2.9
+			case "Terrace":
+				mapTotal := 3.3
+			case "Fields":
+				mapTotal := 3.7
+			case "Park":
+				mapTotal := 3.7
+			case "Plateau":
+				mapTotal := 3.5
+			case "Stagnation":
+				mapTotal := 2.3
+			case "Laboratory":
+				mapTotal := 1.8
+			case "Pit":
+				mapTotal := 2.3
+			case "Ancient City":
+				mapTotal := 3.2
+			case "Courtyard":
+				mapTotal := 2.9
+			case "Forbidden Woods":
+				mapTotal := 2.3
+			case "Mud Geyser":
+				mapTotal := 3.5
+			case "Racecourse":
+				mapTotal := 3.3
+			case "Wasteland":
+				mapTotal := 2.9
+			case "Grotto":
+				mapTotal := 4.3
+			case "Mausoleum":
+				mapTotal := 3.3
+			case "Mineral Pools":
+				mapTotal := 2.2
+			case "Vault":
+				mapTotal := 3.2
+			case "Glacier":
+				mapTotal := 3.5
+			case "Barrows":
+				mapTotal := 4.5
+			case "Conservatory":
+				mapTotal := 2.5
+			case "Fungal Hollow":
+				mapTotal := 3.7
+			case "Toxic Sewer":
+				mapTotal := 4.6
+			case "Dark Forest":
+				mapTotal := 3.7
+			case "Temple":
+				mapTotal := 3.3
+			case "Bog":
+				mapTotal := 3.1
+			case "Underground Sea":
+				mapTotal := 3.9
+			case "Arsenal":
+				mapTotal := 2.6
+			case "Defiled Cathedral":
+				mapTotal := 4.6
+			case "Shore":
+				mapTotal := 3.8
+			case "Thicket":
+				mapTotal := 3.4
+			case "Arachnid Nest":
+				mapTotal := 2.3
+			case "Forge of the Phoenix":
+				mapTotal := 1
+			case "Maze of the Minotaur":
+				mapTotal := 1
+			case "Pit of the Chimera":
+				mapTotal := 1
+			case "Lair of the Hydra":
+				mapTotal := 1
+			Default:
+				mapTotal := 0
+				MsgBox % "Error, can't find map name"
+		}
+		convertStat(mapTotal, numberToCheck, affix)
 	}
 }
 
@@ -724,7 +941,7 @@ ratingCounter(itemType, gripType:="1H"){
 	Global rating = 0
 	;used for tooltip strings
 	Global ratingTable := []
-	Loop, 42
+	Loop, 43
 	{
 		ratingTable[A_Index] := 0
 	}
@@ -1387,7 +1604,7 @@ parseItemType()
 	}
 	
 	;Maps
-	If (RegExMatch(item_class, "Map"))
+	If (RegExMatch(item_class, "Map(?! Fragments)"))
 	{
 		baseType := "Map"
 		subType := baseType
